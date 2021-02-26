@@ -1,0 +1,381 @@
+#+LATEX_CLASS: article
+
+* Summarizing Conversations
+
+** Introduction
+
+In order to broach the subject of summarizing conversations, a discourse in
+general Natural Language Processing (NLP) and summarization techniques is in
+order.
+
+*Research Questions*
+
+1. How are topics considered off-topic handled?
+2. Is the reply structure required in order to appropriately summarize conversations?
+   - By what degree does the reply structure improve summaries? i.e. modeling,
+     summary outcomes, etc.
+3. What considerations must be taken for two participants vs. $N$ participants?
+4. What is the best mechanism for assessing the /correctness/ of a summary? Why?
+
+*** Extraction
+Identifies important pieces of text within a corpus (body of text) and builds a
+summary which contains only those words.
+**** Building an Extraction
+
+*Steps*
+
+1. Construct an IR (Intermediate Representation)
+2. Score Sentences based on a scoring algorithm
+3. Select a summary based on the scored sentences
+
+***** IR
+
+****** Topic Representation
+
+Interprets the topics discussed in the corpus. May use a Frequency approach, sentiment analysis, topic word (dictionary), or Bayesian
+Topic Model approach.
+
+******* Frequency
+
+Frequency of words used to determine a /topic/. This can be taken a step
+further by using the Log-Likelihood Ratio Test.
+
+******* Trees
+
+A document may be represented in a tree of topics and subtopics. This provides a
+structural relationship as an additional feature set for which to calculate
+scores. A /composite topic tree/ is used for cross document comparison.
+Specifically, composite trees merge many topic trees of the *same* type. A
+typicality score[fn:4] is computed as a feature for each topic. The typicality
+score can be used for prioritization of topics to include in a summary. When document trees of the same type are merged, it is easier to
+find patterns. For example, merging document trees about disease prevention will
+reveal common topics (Defintion, Symptoms, Treatment, etc.).
+
+****** Indicator Representation
+
+Describes every sentence as a list with important covariates such as word count, length, position in the document, and presence
+  of keywords.
+
+***** Sentence Score
+
+In a topic IR, this score is an indicator of importance of the sentence. In an
+Indicator IR, this score is some model based off the covariates. Importance of a sentence can be determined
+either by *count* or *proportion* of topic words.
+
+***** Summary Selection
+
+Selects the /k/ most important sentences for the summary. Additional criteria
+beyond the score may be assessed to determine the sentences chosen for the
+summary. i.e. Type of document (Newspaper, Blog, Magazine, etc.)
+
+****** Topic Representation
+
+******* Frequency Approach
+
+******** Word Probability
+
+Probability of a word occuring in a document.
+
+$P(w) = \frac{f(w)}{N}$
+
+For each sentence, the average probability of a word is assigned as a /weight/.
+Then, the best scoring sentence with the highest probability word is chosen to
+ensure that the sentence is present in the summary. The weight of the chosen
+word is then updated to ensure that a word in the summary is not chosen over a
+word that only occurs once [fn:1].
+
+$p_{new}(w_i) = p_{old}(w_i) p_{old}(w_i)$
+
+
+******** Term Frequency Inverse Document Frequency (TFIDF)
+
+A weighting technique which penalizes words that occur most frequently in a
+document.
+
+$q(w) = f_d(w) \log(\frac{|D|}{f_D(w)})$
+
+$f_d(w)$: Term frequency of a word (w) in a document (d)
+
+$f_D(w)$: Number of documents that contain the word (w)
+
+$|D|$: Number of documents in a collection (D)
+
+- easy and fast to compute.
+- Used in many text summarizers
+********* Centroid-based Summarization
+A method of ranking sentences based on TFIDF
+
+*Steps*
+
+1. Detect Topics and documents that describe the same topic clustered together
+   - TFIDF vectors are calculated and TFIDF scores below a predefined threshold
+     are removed
+2. Clustering Algorithm is run over TFIDF vectors and centroids (median of a
+   cluster) are recomputed after each document is added.
+   - Centroids may be considered pseudo-documents which contain a higher than
+     the predefined TFIDF threshold.
+3. Use Centroids to find sentences related to the topic central to the cluster
+   - Cluster-based Relative Utility (CBRU) describes how relevant the topic is
+     to the general topic of the cluster.
+   - Cross Sentence Informational Subsumption (CSIS) measures redundancy between
+     sentences
+
+******* Latent Semantic Analysis
+
+Unsupervised method to selected highly ranked sentences for single and
+multi-document summaries. Let an /n x m/ matrix exist where $n_i$ is a word in
+the corpus and $m_j$ is a sentence. Each entry $a_{ij}$ is the TFIDF weight for
+given word and sentence. Singular Value Decomposition (SVD) is then applied to
+retrieve three matrices: $A = U \Sigma V^T$ where $D = \Sigma V^T$ describes the
+relationship between a sentence and a topic.
+
+The assumption is that a topic can be expressed in a single sentence which is
+not always the case. Additional alternatives have been suggested to overcome
+this assumption.
+
+******* Bayesian Topic Models
+
+Using probability distributions to model probability of words overcomes two
+limitations present in other methods:
+1. Sentences are assumed to be independent so topics embedded in documents are
+   ignored
+2. Sentence scores are heuristics and therefore hard to interpret
+The scoring used in Bayesian topic models is typically the Kullbak-Liebler (KL)
+which measures the difference between two probability distributions P and Q.
+
+******* Graph
+The /Centrifuser/[fn:5] summarizer uses a topic tree or composite topic tree as
+an IR. Sentences related to the topics should be clustered in order to elimnate redundancy. This
+is especially important when computing multi-document summaries. After clusters
+are formed, they can be ranked by the number of documents represented to
+highlight the most /diverse/ cluster possible.
+
+The number of sentences to choose if implementing sentence extraction can be
+weighted by the typicality score.
+
+****** Indicator Representation
+
+******* Graph
+
+Represent documents as a graph. Often influenced by PageRank. Sentences are the
+vertices and edges are similarity (weights). Most common weight is cosine
+similarity against TFIDF weights for given words.
+
+******* Machine Learning
+
+Approach summarization as a classification problem. Machine Learning techniques include:
+- Naive Bayes
+- Decision Trees
+- Support Vector Machines
+- Hidden Markov Models*
+- Conditional Random Fields*
+ 
+ *Assume Dependence
+
+ Models that assume dependence often outperform those who do not.
+
+
+**** Abstraction
+
+Interprets and analyzes important pieces of text within a corpus and builds a
+human readable summary. This is more advanced and computation-intenseive than
+Extraction.
+
+
+**** Evaluating Summaries
+
+Principles in evaluating whether a summary is good or not
+
+1. Decide and specify the most important parts of the original text
+2. Identify important info in the candidate summary since the information can be
+   represented using disparate expressions.
+3. Readability
+
+***** Human Evaluation
+
+Self explanatory.
+
+***** Recall-Oriented Understudy for Gisting Evaluation (ROUGE)
+
+Determine the quality of a summary by comparing it to human summaries.
+
+****** ROUGE-n
+
+*gram*: a word
+
+A series of n-grams is created from the reference summary and the candidate
+summary (usually 2-3 and rarely 4 grams).
+
+$p$ = number of common n-grams
+
+$q$ = number of n-grams from reference summary
+
+$$
+{ROUGE-n} = \frac{p}{q}
+$$
+
+****** ROUGE-l
+
+Longest Common Subsequence (LCS) betweeen two sequences of text. The longer the
+LCS, the more similar they are. Requires ordering to be the same.
+
+****** ROUGE-SU
+
+Also called /skip-bi-gram/ and /uni-gram/.
+
+Allows insertion of words between the first and last words of bi-grams so
+consecutive words are not needed unlike ROUGE-n and ROUGE-l.
+
+*** Conversations
+
+Indicative vs Informative Summarization
+
+*Informative*: A concise replacement for one or more documents. i.e. Abstracts, etc.
+
+*Indicative*: Provides an idea about what is discussed in a document opposed to
+replacing it. Aims to help the reader assess if the conversation is worth
+reading. i.e. book jackets, card catalog entries, movie trailers, etc.
+
+Users who are browsing for information or interested in learning about a topic
+in general are more likely to be satisfied with an Informative Summary; however,
+indicative summaries are good at routing a user who is searching for a paricular question.
+
+Current research suggests that Indicative summaries created by Extraction
+techniques are most appropriate. This is because using Abstraction to generate
+/headlines/ is a hard[fn:2] problem.
+
+The more /focused/ a conversation is, the easier it is to process. A focused
+conversation contains more informative information in the root or lower depth of
+a tree. Less focused conversations will have larger depths and are more likely have
+better information lower in the tree[fn:3]. For focused converations, one
+sentence per message is needed. This can be further optimized by including one
+from the root and one from the first leaf.
+
+*Lemmatize*: sort words by grouping inflected or variant forms of the same word.
+i.e. and, n'.
+
+*Features to assess*
+- Depth of discussion Tree
+  - May indicate /hot topics/ for a given time period
+- Branches
+- Subject
+  - If present, it can be used to score sentences that relate the most. Similar
+    to ROUGE-n
+- Partcipation
+ 
+
+*Message Cleansing*
+- Remove signature blocks and quotes
+- Other cleansing needed?
+ 
+Normalizing sentences gives preference to short sentences; however, the
+summaries created by the shorter sentences were not necessarily the most
+accurate or appropriate.
+
+/Centrifuser/[fn:5] prefers paragraphs or list items over section headings.
+Should this be honored for conversations?
+
+An archive of interaction can be considered a community with key players being
+its contributors.
+
+*** Interactions
+
+An interaction in this sense is defined as an input to a topic. It may be a
+question, an acknowledgement, a response, or all of the above. An interaction
+may be dependent on the medium in which it is posed. For example, an email
+interaction will contain some common and unqiue characteristics to a chat
+interaction. For example, both an email and a chat message will contain a timestamp and a user ID, while only emails contain signatures.
+
+When considering how to categorize and organize interactions, there must be
+consideration for the type of interactions.
+
+**** Structured
+
+A structured interaction is the strictest form. The easiest way
+to think about this is a questionnaire in which a direct question is posed and a
+response expected. While staying on topic isn't strictly enforced, the format
+encourages answers to be directly related. This form of interaction allows for
+the greatest amount of metadata to be collected due to a larger set of
+assumptions that can be made.
+
+**** Semi-structured
+
+A semi-structued interaction is generally associated with a topic. This could be
+an IRC chat for a particular subject or a response to an article on a news site.
+This type of interaction lends itself to be a guided /converation/. Given that
+the topic is broader, the types of interactions tend to follow suit and may only
+be tangentially related. Since there is some structure to the interactions,
+metadata can be collected and thus some assumptions can be formed though not as
+many as a structured interaction.
+
+**** Unstructured
+
+These forms of interactions are the loosest and are a step above text scraping.
+There is no inherent topic associated with the interaction though one may be
+inferred through analysis. A colloquial example is dialogue in a play. Some
+metadata may be present but it is weaker than that found in the other two types.
+i.e. line number.
+
+*** Mediums
+
+Just as data collection methods drive the assumptions taken in analysis, so does
+the medium of a given text.
+
+- Email
+  - Semi-structured
+    - Explicit Recipients, Sender, Timestamp, Subject, Importance
+- Collaborative Chat
+  - Semi-structured
+    - Timestamp, Sender, Recipients (Explicit (denoted by \@) and Implicit),
+      General Subject (Channel Metadata)
+- Peer-to-Peer Chat
+  - Unstructured
+    - Timestamp, Sender, Recipient
+- Public Forum
+  - Semi-structured
+    - Timestamp, Sender, Recipients (Implicit), Subject
+- Raw Text
+  - Unstructured
+    - Metadata dependent on source
+
+
+*** Visualization
+**** Hierarchical Plots
+Given that messages are in or can be categorized in or can be categorized in a
+hierarchical format, there are a plethora of plots that can be used. One example
+is a treemap which displays the thread hierarchy in a series of boxes and content
+depending on the size of the boxes. Larger threads can be visualized this
+way but should be augmented to hide or /prune/ branches that aren't as relevant.
+Typically hierarchical plots show the relationship and provide some ability to
+drill into the details.
+
+*Things to look up*
+- Non-inflected lexical form from Word-Net?
+- LT POS Algorithm
+- What is WordNet?
+
+* References
++ [[https://towardsdatascience.com/a-quick-introduction-to-text-summarization-in-machine-learning-3d27ccf18a9f][Brief Introduction to NLP]]
++ [[https://arxiv.org/pdf/1707.02268.pdf][Overview of Text Summarization Techniques]]
+  - See Section 5 for further references to review for conversation summaries
+  - *Nathan*: See section 7
+  - 45 - summary for 2 levels of discussion
+  - 56 - ML with features
+  - 47 - summarize a full mailbox rather than a thread with clustering and extracting summaries for each cluster
++ [[https://www.researchgate.net/publication/221303547_Facilitating_email_thread_access_by_extractive_summary_generation][Facilitating Email Thread Access by Extractive Summary Generation]]
+  - [[http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.83.5334&rep=rep1&type=pdf][Exploring Discussion Lists: Steps and Directions]]
+    - 15 Browsing in Digital Libraries: a Phrase-based Approach
+    - 16 Scalable Browsing for Large Collections
+    - 21 Document Clustering using Word Clusters via the Information Bottlebeck Method
+  - [[https://academiccommons.columbia.edu/doi/10.7916/D8CF9ZG6][Domain-specific informative and indicative summarization for information retrieval]]
+    - 14 - Methodology for partitioning a message: Header, question, answer,
+      tail. Maximum Entropy Markov Models for Information Extraction and
+      Segmentation
+    - 23 - Ranked sub-conversations within threads (limited extent)
+
+
+[fn:1] Unsure of this in particular. Need confirmation
+[fn:2] Is hard referring to NP-Hard or Hard as in difficult?
+[fn:3] Need more proof here.
+[fn:4] How is this calculated?
+[fn:5] point to "Domain-specific informative..." article

@@ -1,0 +1,69 @@
+"""
+   Thus, our first function diagonal_line(n) should
+   construct an iterator of all the points, represented as
+   coordinate tuples, in the nth diagonal, starting with (0, 0) as the 0th diagonal.
+"""
+def diagonal_line(n) = range(n+1) |> map$(x -> (x, n - x))
+
+diagonal_line(0) `isinstance` (list, tuple) |> print  # False (should be an iterator)
+diagonal_line(0) |> list |> print  # [(0, 0)]
+diagonal_line(1) |> list |> print  # [(0, 1), (1, 0)]
+
+"""
+linearized_plane should produce an iterator that goes through all the
+points in the plane, in order of all the points in the first diagonal(0),
+then the second diagonal(1), and so on
+"""
+def linearized_plane(n = 0) = diagonal_line(n) :: linearized_plane(n + 1)
+
+# Note: these tests use $[] notation, which we haven't introduced yet
+#  but will introduce later in this case study; for now, just run the
+#  tests, and make sure you get the same result as is in the comment
+linearized_plane()$[0] |> print  # (0, 0)
+linearized_plane()$[:3] |> list |> print  # [(0, 0), (0, 1), (1, 0)]
+
+data vector(*pts):
+    """Immutable n-vector."""
+    def __new__(cls, *pts):
+        """Create a new vector from the given pts."""
+        match [v is vector] in pts:
+            return v  # vector(v) where v is a vector should return v
+        else:
+            return pts |*> makedata$(cls)  # accesses base constructor
+    def __abs__(self) =
+        """Return the magnitude of the vector."""
+        self.pts |> map$(pow$(?, 2)) |> sum |> pow$(?, 0.5)
+    def __add__(self, vector(*other_pts)
+                if len(other_pts) == len(self.pts)) =
+        """Add two vectors together."""
+        map((+), self.pts, other_pts) |*> vector
+    def __sub__(self, vector(*other_pts)
+                if len(other_pts) == len(self.pts)) =
+        """Subtract one vector from another."""
+        map((-), self.pts, other_pts) |*> vector
+    def __neg__(self) =
+        """Retrieve the negative of the vector."""
+        self.pts |> map$(-) |*> vector
+    def __mul__(self, other):
+        """Scalar multiplication and dot product."""
+        match vector(*other_pts) in other:
+            assert len(other_pts) == len(self.pts)
+            return map((*), self.pts, other_pts) |> sum  # dot product
+        else:
+            return self.pts |> map$((*)$(other)) |*> vector  # scalar multiplication
+    def __rmul__(self, other) =
+        """Necessary to make scalar multiplication commutative."""
+        self * other
+
+"""
+    Turn all the tuples in linearized_plane into vectors,
+    using the n-vector class we defined earlier.
+"""
+def vector_field() = linearized_plane() |> starmap$(vector)
+
+# You'll need to bring in the vector class from earlier to make these work
+vector_field()$[0] |> print  # vector(*pts=(0, 0))
+vector_field()$[2:3] |> list |> print  # [vector(*pts=(1, 0))]
+vector_field()$[1:3] |> list |> print
+
+vector_field()$[:5] |> map$(abs) |> list |> print

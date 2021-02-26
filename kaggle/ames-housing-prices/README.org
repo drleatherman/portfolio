@@ -1,0 +1,18 @@
+* Analysis
+
+** Goal
+
+Given 81 variables, predict the Sale Price for a house in Ames, Iowa.
+
+** Questions
+- What is the range of the dataset? Earliest Date? Latest Date?
+  - Earliest: 2006
+  - Latest: 2010
+- What are the top 5 strongest correlations with SalePrice?
+  1. GrLivArea (0.708624)
+  2. GarageCars (0.640409)
+  3. GarageArea (0.623431)
+  4. TotalBsmtSF (0.613581)
+  5. 1stFlrSF (0.605852)
+- How much missing data is there? What columns are the biggest offenders?
+  There are 6 columns with over 10% missing values, 4 of which have over 80% missing values. 
