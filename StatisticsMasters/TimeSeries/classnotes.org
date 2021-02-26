@@ -1,0 +1,597 @@
+#+TITLE:     Time Series Analysis Class Notes
+#+AUTHOR:    Dustin Leatherman
+
+* Characteristics of Time Series (2020/01/09)
+- Must be correlation between data points which limits conventional statistical
+  analysis.
+- One variable, $x_t$, will be used in this course
+
+*Important Questions to Ask*
+- What patterns are visible over time?
+- How can correlation between observations be used to help with the model?
+- Can future state be predicted using this data?
+
+*Problem*: We don't know how many previous time points should be used to predict
+the current value.
+
+*General Tips*
+- if non-constant variance, transform the predictors
+- Find assumptions, then continue modeling
+- Time is generally treated as discrete values instead of continuous
+
+*Stochastic Process*: collection of random variables, $x_t$, indexed by $t$
+- *Realization*: Realization of a stochastic process.
+
+*Time Series*: collection of randome variables indexed and ordered by time
+
+*White Noise*: $w_t \sim N(0, \sigma_w^2)$
+
+One way to "smooth" a time series is to introduce a moving average.
+
+MA(1): $x_t = \beta w_{t - 1} + w_t$
+
+AR(1): $x_t = \beta x_{t - 1} + w_t$
+
+\begin{equation}
+\begin{split}
+E(x_t) = & E(\beta X_{t - 1} + w_t)\\
+= & \beta E(x_{t - 1}) + E(w_t)\\
+= & ...\\
+= & 0
+\end{split}
+\end{equation}
+
+- $0 \leq \beta \leq 1$
+
+$\gamma(s, t) = cov(x_s, x_t) = E[(x_s - \mu_s)(x_t - \mu_t)] \forall \ s,t$
+
+if s == t, $cov(x_s, x_s) = var(x_s)$
+
+$\gamma(s, t) = \begin{cases}
+\sigma_w^2 & s = t\\
+0 & s \neq t
+\end{cases}$
+- given $w_t \sim ind \ N(0, \sigma_w^2)$
+
+** Moving Average
+
+Let $m_t = \frac{w_t + w_{t - 1} + w_{t - 2}}{3}$
+\begin{equation}
+\begin{split}
+E[(m_s - \mu_s)(m_t - \mu_t)] = & E(m_s m_t)\\
+= & \frac{1}{9}E[(w_s + w_{s - 1} + w_{s - 2})(w_t + w_{t - 1} + w_{t - 2})]
+\end{split}
+\end{equation}
+
+_s = t_
+\begin{equation}
+\begin{split}
+E(m_t^2) = & var(m_t) + E(m_t)^2\\
+= & \frac{1}{9} var(w_t + w_{t - 1} + w_{t - 2}) + 0\\
+= & \frac{1}{9} (var(w_t) + var(w_{t - 1} + var(w_{t - 2})))\\
+= & \frac{1}{9} (1 + 1 + 1)\\
+= & \frac{3}{9}
+\end{split}
+\end{equation}
+
+_s = t - 1_: $E(m_{t - 1}, m_t) = \frac{2}{9}$
+
+_s = t - 2_: $E(m_{t - 2}, m_t) = \frac{1}{9}$
+
+_s = t - 3_: $E(m_{t - 3}, m_t) = 0$
+
+$\gamma(s, t) = \begin{cases}
+\frac{3}{9} & s = t\\
+\frac{2}{9} & |s - t| = 1\\
+\frac{1}{9} & |s - t| = 2\\
+0 & |s - t| \geq 3
+\end{cases}$
+
+** Autocorrelation
+
+$\rho_{xy} = \frac{cov(x, y)}{\sqrt{var(x)} \sqrt{var(y)}}$
+
+*AR*: $\rho(s, t) = \begin{cases}
+1 & s = t\\
+0 & s \neq t
+\end{cases}$
+
+*MA*: $\rho(s, t) = \begin{cases}
+1 & s = t\\
+\frac{2}{3} & |s - t| = 1\\
+\frac{1}{3} & |s - t| = 2\\
+0 & |s - t| \geq 3
+\end{cases}$
+
+positve linear dependence = smooth
+negative linear dependence = choppy
+
+** Stationarity
+*Strict stationary time series*: the probabalistic behavior of $x_t, ..., x_{tk}$
+os the exact same as the shifted set $x_{t + h}, ..., x_{tk + h}$ for any
+collection of time points $[t_1, t_k]$ for any $k = 1, 2,...$
+
+$P(x_q \leq c_1, x_2 \leq c_2) = P(x_{10} \leq c_q, x_{11} \leq c_2)$
+
+This is almost never used in practice because it is /too/ strict.
+
+*Weakly Stationary Time Series*: The first two moments (mean, covariance) of the
+time series are invariant to time shifts
+
+$E(x_t) = \mu \forall t$
+
+$\gamma(t, t + h) = \gamma(0, h) \forall t$
+
+- $\mu$ and $\gamma(0, h)$ are /not/ functions of t
+- Assumption of *Equal Variance*
+- $\gamma(h) = \gamma(-h)$ if weakly stationary
+
+\begin{equation}
+\begin{split}
+\rho(t, t + h) = & \frac{\gamma(t, t + h)}{\sqrt{\gamma(t, t)} \sqrt{\gamma(t +
+h, t + h)}}\\
+ = & \frac{\gamma(h)}{\sqrt{\gamma(0)} \sqrt{\gamma(0)}}\\
+ = & \frac{\gamma(h)}{\gamma(0)}
+\end{split}
+\end{equation}
+
+Is there a correlation between lags?
+$H_0: \ \rho(h) = 0$
+$H_A: \ \rho(h) \neq 0$
+
+
+*Sample Mean*: $\bar{x} = \frac{1}{n} \Sigma x_t$
+
+*Sample Covariance*: $\hat{\gamma(h)} = \frac{1}{n} \sum_{t = 1}^{n - h} (x_{t +
+ h} - \bar{x}) (x_t - \bar{x})$
+* Time Series Regression, Exploratory Data Analysis, and ARIMA Models (2020/01/16)
+** Differences
+
+Taking differences between successive values helps remove trend to help bring a
+time series to stationarity.
+
+1st diff - $\nulpa x_t = x_t - x_{t - 1}$ (removes linear trend)
+
+2nd diff - $(x_t - x_{t - 1}) - (x_{t - 1} - x_{t - 2}) = \nulpa x_t - \nulpa
+x_{t - 1} = \nulpa^2 x_T$ (removes quadratic trend)
+
+*Proof*
+$x_t - x_{t - 1} = \beta_0 + \beta_1 t - [\beta_0 + \beta_1 (t - 1)] = \beta_1$
+
+Order of Attempt
+1. Transformation
+2. Differencing
+  
+*** Backshift
+- $B x_t = x_{t - 1}$
+- $B^k x_t = x_{t - k}$
+
+\begin{equation}
+\begin{split}
+(1 - 2 B + B^2) x_t\\
+= & x_t - 2 x_{t - 1} + x_{t - 2}
+= & (x_t - x_{t - 1}) - (x_{t - 1} - x_{t - 2})
+\end{split}
+\end{equation}
+
+A MA model can be expressed using Backshift operators and subsequently,
+expressed as an AR model.
+
+\begin{equation}
+\begin{split}
+m_t = & \frac{w_t + w_{t - 1} + w_{t - 2}}{3}\\
+= & \frac{1}{3} (1 + B + B^2) w_t
+\end{split}
+\end{equation}
+
+**** Properties
+- $BC = C$ for constant C
+- (1 - B) x_t = \nulpa x_t$
+- $(B \times B) = B^2$
+- $(1 - B)^2 x_t = \nulpa^2 x_t$
+- $(1 - B)^0 x_t = x_t$
+- $(1 - B) x_t$ - considered a linear filter since it filters out linear trend.
+  i.e. first difference
+*** MA(1)
+$x_t = w_t + \theta_1 + w_{t - 1} = (1 + \theta_1 B) w_t$ (AR Model Form)
+
+\begin{equation}
+\begin{split}
+& \ (1 - 0.7 B) (1 - B) x_t = w_t\\
+\to & \ (1 - 1.7 B + 0.7 B^2) x_t = w_t\\
+\to & \ (x_t = 1.7 x_{t - 1} - 0.7 x_{t - 2} + w_t)
+\end{split}
+\end{equation}
+
+_Aside_: Time series predicts future values. Regression is for estimation within
+known values.
+*** Functional Differencing
+Use $-0.5 \leq B \leq 0.5$ to do differencing
+
+*long memory*: for $h \to \infty, \ \rho(h) \to 0$ /slowly/
+*short memory*: for $h \to \infty, \ \rho(h) \to 0$ /quickly/
+
+** ARIMA
+
+AR-I-MA
+
+AR: Autoregressive
+I: Integrated (differencing)
+MA: Moving Average
+
+*** AR(1)
+
+Uses p past observations to predict future observations. The preset value is
+predicted by a linear combination of previous time points.
+
+$x_t = \phi_t x_{t - 1} + \phi_2 x_{t - 2} + ... + \phi_p x_{t - p} + w_t$
+
+$[\phi_1, \phi_p]$ - unknown parameters
+
+$(1 - \phi_1 B - \phi_2 B^2 - ... - \phi_p B^p) x_t = w_t$
+
+$\to \phi(B) x_t = w_t$
+
+\begin{equation}
+\begin{split}
+x_t = & \phi x_{t - 2} + w_t\\
+= & \phi (\phi x_{t - 2} + w_{t - 1}) + w_t\\
+= & \phi^2 (x_{t - 2} + \phi w_{t - 1} + w_t)\\
+...\\
+= & \sum_{j = 0}^{\infty} \phi^j w_{t - j}
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+E(x_t) =& E(\sum_{j = 0}^{\infty} \phi^j w_{t - j}) = 0\\
+\gamma(x_t) =& E(X_t x_{t + h}) - E(x_t) E(x_{t + h})\\
+= & E(x_t x_{t + h}) \ \text{when}\ \mu = 0\\
+\gamma(0) =& \sum_{j = 0}^{\infty} \phi^j w_{t - j}\\
+=& \sum_{j = 0}^{\infty} \phi^{2j} var(w_{t - j})\\
+=& \sigma_w^2 \sum_{j = 0}^{\infty} \phi^{2j} = \frac{\sigma_w^2}{1 - \phi^2} \ \text{where} \ h = 0
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\gamma(h) = & \frac{\phi^h \sigma_w^2}{1 - \phi^2}\\
+\rho(h) = & \frac{\gamma(h)}{\gamma(0)} = \phi^h
+\end{split}
+\end{equation}
+
+
+Given $|\phi| < 1$, an AR(1) Model can be expressed as a MA(1) Model (i.e. a sum
+of $w_t$'s).
+
+*** MA(1)
+
+\begin{equation}
+\begin{split}
+\gamma(h) = & \begin{cases}
+\sigma_w^2 (1 + \theta_1^2) & h = 0\\
+\theta_1 \sigma_w^2 & h = 1\\
+0 & h \geq 2
+\end{cases}
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\rho(h) =\begin{cases}
+1 & h = 0\\
+\frac{\theta_1}{(+ \theta_1^2)} & h = 1\\
+0 & h > 1
+\end{cases}
+\end{split}
+\end{equation}
+
+
+*** ARMA(p, q)
+
+$(1 - \phi_1 B - \phi_2 B^2 - ... - \phi_p B^p) x_t = (1 + \theta_1 B + \theta_2
+B^2 + ... + \theta_q B^q) w_t$
+
+$\to \phi(B) x_t = \theta(B) w_t$ assuming x_t is stationary
+
+**** Parameter Redundancy
+Because AR and MA models can be converted back and forth, _parameter redundancy_
+can occur. For example, $ARMA(2, 1) == AR(1)$. This mostly happens for
+theoretical data but R will throw an error if this happens. Can use polyroot()
+to debug.
+* ARMA Models (2020/01/23)
+ARIMA models are reduced to ARMA after differencing.
+
+** AR(p)
+\begin{equation}
+\begin{split}
+x_t = (\sum_{j = 1}^{p} \phi_j x_{t - j}) + \epsilon
+\end{split}
+\end{equation}
+
+** MA(q)
+\begin{equation}
+\begin{split}
+x_t = & (+ \theta_1 B + \theta_2 B^2 + ... + \theta_q B^q) w_t\\
+= & (\sum_{j = 0}^{q} \theta_j B^j) w_t, \ s.t. \ \theta_0 = 1, \ w_t \sim \ ind. \ N(0 \sigma_w^2) \ for \ t = 1,...,n\\
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+ACF = & \gamma(h) = cov(x_t, x_{t + h})\\
+= & E(x_t x_{t + h}) - E(x_t) E(x_{t + h})\\
+= & E(x_t x_{t + h})\\
+= & ...\\
+= & \sigma_w^2 \sum_{i = 0}^{q - h} \theta_i \theta_{i + h}, \ \text{if j = i + h}
+\end{split}
+\end{equation}
+
+Thus
+
+\begin{equation}
+\begin{split}
+\gamma(h) = &\begin{cases}
+\sigma_w^2 \sum_{i = 0}^{q - h} \theta_i \theta_{i + h}, & 0 \leq h \leq q\\
+0, & h > q
+\end{cases}
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\gamma(0) = \sigma_w^2 \sum_{i = 0}^{q} \theta_i^2
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\rho(h) = \frac{\gamma(h)}{\gamma(0)} =\begin{cases}
+(\sum_{i = 0}^{q} \theta_i^2)^{-1} \sum_{i = 0}^{q - h} \theta_i \theta_{i + h}, & 0 \leq h \leq q\\\
+0, & h > q
+\end{cases}
+\end{split}
+\end{equation}
+
+
+
+** ACF & PACF
+These plots are used to find values at lags $h = 0,1,2,...$ for a specific ARMA
+process. These values can be compared with the /observed/ values to determine
+the appropriate model to use for the data.
+
+ACF plot helps determine q for a MA(q) model.
+PACF plot helps determine p for an AR(p) model.
+
+PACF plots will "cut off to 0" for an AR(p) model whereas ACF plots will not.
+ACF plots for AR(p) models are act like PACF plots for MA(q) models.
+
+|          | AR(p)                     | MA(q)                     | ARMA(p,q)                   |
+|----------+---------------------------+---------------------------+-----------------------------|
+| *ACF*    | Tails off to 0            | Cuts off to 0 after lag q | Tails off to 0 after q lags |
+| *PACF*   | Cuts off to 0 after lag p | Tails off to 0            | Tails off to 0 after p lags |
+
+*Examining these plots is the first step to constructing an ARMA model.*
+*** PACF
+$\beta$'s are called partial autocorrelations because they measure the
+dependence of $x_t$ on $x_{t + h}$ removing the effect all other random
+variables in between. These can be treated like regular correlations.
+
+
+\begin{equation}
+\begin{split}
+\beta_{11} = & Corr(x_t, x_{t + 1})\\
+\beta_{22} = & Corr(x_t, x_{t + 2} | x_{t + 1})\\
+\beta_{33} = & Corr(x_t, x_{t + 3} | x_{t + 1}, x_{t + 2})
+...
+\end{split}
+\end{equation}
+
+
+** ARMA(p, q)
+
+Since AR(p) and MA(q) processes are interoperable, it is easier to deal with
+them as one.
+
+\begin{equation}
+\begin{split}
+& \phi(B) x_t = \theta (B) w_t\\
+\to & x_t = [\theta(B) / \phi(B)] w_t\\
+\to & x_t = \psi (B) w_t\\
+\to & \psi (B) = 1 + B \psi_1 + B^2 \psi_w + ... + , \ \psi_0 = 1, \ E(x_i) = 0
+\end{split}
+\end{equation}
+
+$\psi (B)$ is a *constant*.
+
+\begin{equation}
+\begin{split}
+\gamma(h) = \begin{cases}
+\sum_{i = 1}^{p} \theta_j \gamma(h - j) + \sigma_w^2 \sum_{j = h}^{q} \theta_j \psi_{j - h}, & 0 \leq h \leq max(p, q + 1)\\
+\sum_{i = 1}^{p} \phi_j \gamma(h - j), & h \geq max(p, q + 1)
+\end{cases}
+\end{split}
+\end{equation}
+* ARIMA Models (2020/02/06)
+What if $x_t$ is not stationary in the mean? Difference!
+
+*ARIMA(p,d,q)*: $\phi (B) (1 - B)^d x_t = \theta (B) w_t, \ w_t \sim ind. N(0, \sigma_w^2)$
+
+*ARIMA(1,1,1)*
+\begin{equation}
+\begin{split}
+(1 - \phi_1 B) (1 - B) x_t = (1 + \theta_1 B) w_t\\
+(1 - \phi_1 B) (x_t - x_{t - 1}) = (1 + \theta_1 B) w_t\\
+x_t = (1 + \phi_1)x_{t - 1} - \phi_1 x_{t- 2} + w_t + \theta_1 w_{t -1}
+\end{split}
+\end{equation}
+
+*Note*: Delete initial 0 for generated data sets for ARIMA(1,1,1). Because there
+ is a difference, that means that there's an empty value at first which can be
+ discarded.
+
+ Iterative method called /Newton Raphson/ to estimate parameters. ARMA(1,1) has
+ 4 parameters: $\phi, \theta, \mu, \sigma_w^2$
+
+If $\alpha \neq 0$ for AR(1):
+
+\begin{equation}
+\begin{split}
+x_t = & \alpha + \phi x_{t - 1} + w_t\\
+= & \mu (1 - \phi) + \phi x_{t - 1} + w_t
+\end{split}
+\end{equation}
+
+*WARNING*: sarima()$merman estimates $\mu$, not $\alpha$
+
+** Forecasting
+*** Minimum Mean Square Error Predictor
+$x_{n + m} = E(e_{n + m} | x_n, x_{n - 1}, ..., x_1)$
+
+This is a conditional expectation which denotes the expected value of x at m
+time points into the future, conditional on the time series observed.
+
+*** AR(1)
+
+for m = 1,
+\begin{equation}
+\begin{split}
+x_{n + 1}^n = & E(x_{n + 1} | x_n, ..., x_1)\\
+=& E(\phi_1 x_n + w_{n + 1}| x_n, ..., x_1)\\
+=& E(\phi_1 x_n | x_n, ..., x_1) + E(w_{n + 1}| x_n, ..., x_1)\\
+=& \phi_1 E(x_n| x_n, ..., x_1)\\
+=& \phi_1 x_n
+\end{split}
+\end{equation}
+
+for m = 2,
+\begin{equation}
+\begin{split}
+x_{n + 2}^n = & E(x_{n + 2} | x_n, ..., x_1)\\
+=& E(\phi_1 x_{n + 1} + w_{n + 2}| x_n, ..., x_1)\\
+=& E(\phi_1 x_{n + 1} | x_n, ..., x_1) + E(w_{n + 2}| x_n, ..., x_1)\\
+=& \phi_1 E(x_{n + 1}| x_n, ..., x_1)\\
+=& \phi_1 x_{n + 1}^n\\
+= & \phi_1^2 x_n
+\end{split}
+\end{equation}
+
+*Summary*
+
+|   m | $x_{n + m}^n$                         |
+|-----+---------------------------------------|
+|   1 | $\mu(1 - \phi_1) + \phi_1 x_n$        |
+|   2 | $\mu(1 - \phi_1) +\phi_1 x_{n + 1}^n$ |
+|   3 | $\mu(1 - \phi_1) +\phi_1 x_{n + 2}^n$ |
+|   4 | $\mu(1 - \phi_1) +\phi_1 x_{n + 3}^n$ |
+| ... | ...                                   |
+
+*** MA(1)
+
+for m = 1,
+\begin{equation}
+\begin{split}
+s_{n + 1}^n = & E(x_{n + 1}| x_n,...,x_1)\\
+=& E(\theta_1 w_n + w_{n + 1}| x_n,...,x_1)\\
+= & \theta_1 E(w_n| x_n,...,x_1) + E(w_{n + 1}| x_n,...,x_1)\\
+= & \theta_1 w_n
+\end{split}
+\end{equation}
+
+
+for m = 2,
+\begin{equation}
+\begin{split}
+s_{n + 2}^n = & E(x_{n + 2}| x_n,...,x_1)\\
+=& E(\theta_1 w_{n + 1} + w_{n + 2}| x_n,...,x_1)\\
+= & \theta_1 E(w_{n + 1}| x_n,...,x_1) + E(w_{n + 2}| x_n,...,x_1)\\
+= & 0
+\end{split}
+\end{equation}
+
+It tails off to 0 quickly. Since parameters are not known, they are replaced
+with estimates:
+
+$x_{n + 1}^n = \hat \theta_1 w_n^n$
+
+$w_n^n$: Residual for the nth parameter
+
+$w_0 = 0$
+$w_n = x_n - \theta_1 w_{n - 1} \to w_n^n = x_n - \hat \theta_1 w_{n - 1}^n$
+*** ARIMA(1,1,1)
+
+$\phi (B) (1 - B) x_t = \theta(B) w_t, \ w_t \sim ind. N(0, \sigma_w^2$
+
+$x_t = (1 + \phi_1) x_{t - 1} - \phi_1 x_{t - 2} + \theta_1 w_{t - 1} + w_t$
+
+$x_{n + m} = (1 + \phi_1) x_{n + m - 1} - \phi_1 x_{n + m - 2} + \theta_1 w_{n + m - 1} + w_{n + m}$
+
+m = 1,
+\begin{equation}
+\begin{split}
+x_{n + 1}^n = & E(x_{n + 1} | x_n,...,x_1)\\
+= & E[(1 + \phi_1) x_n - \phi_1 x_{n - 1} + \theta_1 w_n + w_{n + 1}| x_n,...,x_1]\\
+= & (1 + \phi_1) E(x_n| x_n,...,x_1) - \phi_1  E(x_{n - 1}| x_n,...,x_1) + \theta_1 E(w_n| x_n,...,x_1) + E(w_{n + 1}| x_n,...,x_1)\\
+= & (1 + \phi_1) x_n - \phi_1 x_{n - 1} + \theta_1 w_n
+\end{split}
+\end{equation}
+
+m = 2,
+
+\begin{equation}
+\begin{split}
+x_{n + 2}^n = & E(x_{n + 2} | x_n,...,x_1)\\
+= & E[(1 + \phi_1) x_{n + 1} - \phi_1 x_{n} + \theta_1 w_{n + 1} + w_{n + 2}| x_n,...,x_1]\\
+= & (1 + \phi_1) E(x_{n + 1}| x_n,...,x_1) - \phi_1  E(x_{n}| x_n,...,x_1) + \theta_1 E(w_{n + 1}| x_n,...,x_1) + E(w_{n + 2}| x_n,...,x_1)\\
+= & (1 + \phi_1) x_{n + 1}^n - \phi_1 x_{n}
+\end{split}
+\end{equation}
+
+*Summary*
+
+|   m | $x_{n + m}^n$                                        |
+|-----+------------------------------------------------------|
+|   1 | $(1 + \phi_1) x_n - \phi_1 x_{n - 1} + \theta_1 w_n$ |
+|   2 | $(1 + \phi_1) x_{n + 1}^n - \phi_1 x_{n}$            |
+|   3 | $(1 + \phi_1) x_{n + 2}^n - \phi_1 x_{n + 1}^n$      |
+|   4 | $(1 + \phi_1) x_{n + 3}^n - \phi_1 x_{n + 2}^n$      |
+| ... | ...                                                  |
+
+Since parameters are not known, estimates replace the appropriate variables.
+$w_n^n$ replace $w_n$
+
+*** Error
+$x_{n + m} - x_{n + m}^n$: observed - forecast
+
+$var(x_{n + m} - x_{n + m}^n)$: Mean Square Prediction Error (MS PE) - $P_{n+m}^n$
+
+**** Confidence Interval
+
+$X_{n + m}^n \pm Z_{1 - \alpha/2} \sqrt{\hat var(x_{n + m} - x_{n + m}^n)}$
+* Building ARIMA Models (2020/02/13)
+1. Construct $x_t$ vs t plots. Estimated ACF plot. /Is Time Series appropriate?/
+   - Determine stationarity
+     - examine difference if needed
+       - *Note*: second differencing makes models more complicated.
+         Transformations are preferred for resolving quadratic trends.
+     - apply transformations if needed
+2. Construct ACF/PACF plots of stationary series. Match patterns to determine
+   some example models. /What options do we have?/
+3. Find estimated models using MLE.
+4. Investigate Residuals. /Examine Models/
+   Assumptions
+   - Independent. ACF plot shows no correlation between obs.
+   - $E(w_t) = 0$
+   - No Outliers: No values > |3|. Otherwise we have outliers. Transformations
+     can be used to help reduce outliers.
+   - Ljung-Box-Pierce Test. No values should fall _below_ the line.
+     \begin{equation}
+     \begin{split}
+        H_0: & P(1) = P(2) = ... = P(H) = 0\\
+        H_A: & \text{at least one is non-zero}
+    \end{split}
+    \end{equation}
+5. Pick Best Model using AIC, AICc, BIC, MSE.
+   $k = \phi + \theta + 2 = \text{number of parameters}$
+   $AICc = AIC + \frac{2k^2 + 2k}{n - k - 1}$
+6. Forecasting

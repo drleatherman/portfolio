@@ -1,0 +1,24 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{} compute the matrix Pairs}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{} Pairs(i,j) = Pr[ first word is i, second word is j]}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{} Each column in a Shelf is a document.}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{} The documents are the columns of a Shelf.}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+
+\PYG{n}{Pairs} \PYG{p}{=} \PYG{n+nb}{zeros}\PYG{p}{(}\PYG{n}{dwords}\PYG{p}{,} \PYG{n}{dwords}\PYG{p}{);}
+\PYG{k}{for} \PYG{n}{ii}\PYG{p}{=}\PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{dwords}
+  \PYG{k}{for} \PYG{n}{jj} \PYG{p}{=} \PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{dwords}
+    \PYG{n}{count} \PYG{p}{=} \PYG{l+m+mi}{0}\PYG{p}{;}
+    \PYG{n}{total} \PYG{p}{=} \PYG{l+m+mi}{0}\PYG{p}{;}
+    \PYG{k}{for} \PYG{n}{doc}\PYG{p}{=}\PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{Num}
+      \PYG{n}{total} \PYG{p}{=} \PYG{n}{total} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{;}
+      \PYG{k}{if} \PYG{p}{(}\PYG{n}{Shelf}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{n}{doc}\PYG{p}{)} \PYG{o}{==} \PYG{n}{ii}\PYG{p}{)} \PYG{o}{\PYGZam{}\PYGZam{}} \PYG{p}{(}\PYG{n}{Shelf}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{n}{doc}\PYG{p}{)} \PYG{o}{==} \PYG{n}{jj}\PYG{p}{)}
+        \PYG{n}{count} \PYG{p}{=} \PYG{n}{count} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{;}
+        \PYG{k}{end}
+    \PYG{k}{end}
+    \PYG{n}{Pairs}\PYG{p}{(}\PYG{n}{ii}\PYG{p}{,}\PYG{n}{jj}\PYG{p}{)} \PYG{p}{=} \PYG{n}{count}\PYG{o}{/}\PYG{n}{total}\PYG{p}{;}
+    \PYG{k}{end}
+\PYG{k}{end}
+\end{Verbatim}

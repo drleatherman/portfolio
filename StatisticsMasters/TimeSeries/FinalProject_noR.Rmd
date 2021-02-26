@@ -1,0 +1,287 @@
+---
+title: "Climate Change in Chicago"
+author: "Dustin Leatherman"
+date: "2/29/2020"
+output:
+  pdf_document: default
+  html_document: default
+bibliography: FinalProject.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.width = 10)
+library(tidyverse)
+library(ggplot2)
+library(zoo)
+library(knitr)
+library(astsa)
+library(kableExtra)
+library(grid)
+library(gridExtra)
+library(tibbletime)
+library(ggfortify)
+
+temps <- read.csv("~/projects/StatisticsMasters/TimeSeries/chicago_weather.csv")
+```
+
+# Abstract
+
+The effects of climate change are being felt around the globe, sometimes more obviously in some areas than others. Chicago is famous for its harsh winters but as climate change sets in, has it affected Chicago winters? This is a look at 30 years of weekly averages for temperature data collected at O'Hare International Airport in Chicago, Illinois. Hourly and daily data was sourced by NOAA as part of its Local Climate Dataset program. Missing daily values were calculated from hourly values, which both were subsequently rolled up to a weekly granularity. The Data indicate that weekly Dry Bulb Temperatures have remained relatively stable over the past 30 years hinting at no significant change. The Box-Jenkins approach to ARIMA modeling is used to fit and forecast weekly average temperatures for the year 2020. Significant challenges were faced during model fitting as the number of transformations available were limited due to the possibility of negative forecasts, outliers, and the weekly granularity. Further analysis using deviations from mean temperature for the same time period may prove more insightful. 
+
+\pagebreak
+
+# Introduction
+
+Climate is defined as the long-term average of weather, typically over a period of 30 years [@IPCC]. Anthropogenic climate change is a well-known phenomenon that has captivated regional and national politics. This begs the question, how has Chicago's local climate changed over the past 30 years? Observations over a 30 year period from O'Hare International Airport have been collected and freely distributed by the NOAA. O'Hare's position makes it ideal for local climate data since it is far enough away from Lake Michigan to be free from the Lake Effect. 
+
+The questions at hand are:
+- Have Chicago Winters gotten warmer over the last 30 years?
+- Have Chicago Summers gotten warmer over the last 30 years?
+- What will the next year look like for Chicago based on the past 30?
+
+> Local Climatological Data (LCD) are summaries of climatological conditions from airport and other prominent weather stations managed by NWS, FAA, and DOD. The product includes hourly observations and associated remarks, and a record of hourly precipitation for the entire month. Also included are Weekly summaries summarizing temperature extremes, degree days, precipitation amounts and winds [@NOAA].
+
+While there are many variables of interest in the data, the one most relevant to the questions at hand is Average Dry Bulb Temperature. Dry Bulb Temperature is the temperature of air measured by a thermometer freely exposed to the air, but shielded from radiation and moisture. This is considered one of the most important climate variables for human comfort [@DryBulb]. This is in direct comparison to the Wet Bulb Temperature which is measured on a thermometer wrapped in a damp cloth to mimic the temperature at 100% humidity. While Chicago can experience extreme bouts of humidity, that measure will not be taken into consideration.
+
+# Data Preperation
+
+The data were collected from the U.S. Local Climatological Data (LCD) provided by the NOAA. The data contained three types of reports: hourly, daily, and monthly summaries. In addition, due to technical limitations of the NOAA's platform, only 10 years of measurements could be downloaded at a time. This required the merging the datasets, ensuring that no measurements overlapped for any given day. Furthermore, there were periods of missing hourly and daily values. Missing daily values were replaced with aggregations from hourly values. In the interest of not overfitting missing values with averages, any missing hourly values were ignored during the daily aggregations. It is worth noting that the average values provided by the daily summary were *approximate* to the calculated daily values. The daily summary temperatures were calculated using the arithmetic average of the max and min temperature for the day and taking the integer value. This discovery was made late in the analysis process and serves as a point for future improvement.
+
+Initial analysis of this dataset was at the daily level but as one might expect, Seasonal ARIMA modeling becomes costly (and outright does not run) beyond a certain number of lags. Hence, the data was aggregated to the weekly grain for analytical purposes.
+
+# Model Specification
+
+```{r fig.height=6}
+temps.date <- temps %>% as_tibble %>% mutate_at("dateYYYYMMDD", as.Date) %>% as_tbl_time(index = dateYYYYMMDD)
+temps.zoo.avg <- zoo(temps.date$WeeklyAverageDryBulbTemperature, order.by = temps.date$dateYYYYMMDD)
+temps.zoo.max <- zoo(temps.date$WeeklyMaximumDryBulbTemperature, order.by = temps.date$dateYYYYMMDD)
+temps.zoo.min <- zoo(temps.date$WeeklyMinimumDryBulbTemperature, order.by = temps.date$dateYYYYMMDD)
+
+plot.data.avg <- 
+  autoplot(temps.zoo.avg) + 
+    ylab("Temperature (F)") + 
+    xlab("Year") + 
+    ggtitle("Average Weekly Temperature at O'Hare Intl Airport")
+
+plot.data.max <-
+  autoplot(temps.zoo.max) + 
+    ylab("Temperature (F)") + 
+    xlab("Year") + 
+    ggtitle("High Weekly Temperature at O'Hare Intl Airport")
+
+plot.data.min <-
+  autoplot(temps.zoo.min) + 
+    ylab("Temperature (F)") + 
+    xlab("Year") + 
+    ggtitle("Low Weekly Temperature at O'Hare Intl Airport")
+
+grid.arrange(
+  plot.data.avg,
+  plot.data.max,
+  plot.data.min,
+  ncol = 1
+)
+```
+
+The peaks represent the summers and the valleys represent the winters. There doesn't appear to be a trend year over year but there appears to be more outliers with regards to extreme cold temperatures compared to extreme warm temperatures. Comparing the timeseries with Minimum and Maximum Dry Bulb Temperature show similar patterns. This graph highlights that Dry Bulb Temperature data is missing data for November and December of 2000. The series appears to be stationary with seasonality so differencing may not be needed.
+
+
+```{r}
+plot.acf.1 <- 
+  autoplot(acf(coredata(temps.zoo.avg), na.action = na.pass, lag.max = 520, plot = FALSE)) +
+  ggtitle("ACF Over 5 Years")
+
+plot.pacf.1 <- 
+  autoplot(pacf(coredata(temps.zoo.avg), na.action = na.pass, lag.max = 520, plot = FALSE)) +
+  ggtitle("PACF Over 5 Years") + ylab("PACF")
+
+grid.arrange(plot.acf.1, plot.pacf.1, ncol = 2)
+```
+
+As expected, there is seasonal correlation with the previous year present in the ACF plot and some correlation within the same year in the PACF plot. First, seasonality will be dealt with.
+
+```{r}
+temps.zoo.avg.diff <- zoo(diff(temps.date$WeeklyAverageDryBulbTemperature, lag = 52, differences = 1), order.by = temps.date$dateYYYYMMDD)
+autoplot(temps.zoo.avg.diff)
+
+plot.acf.2 <- 
+  autoplot(acf(coredata(temps.zoo.avg.diff), na.action = na.pass, lag.max = 520, plot = FALSE))
+
+plot.pacf.2 <-
+  autoplot(pacf(coredata(temps.zoo.avg.diff), na.action = na.pass, lag.max = 520, plot = FALSE)) + ylab("PACF")
+
+grid.arrange(plot.acf.2, plot.pacf.2, ncol = 2)
+```
+
+When differenced over one year, much of the seasonality is reduced. Since there doesnt appear to be a quadratic trend, a second difference is not needed. This indicates that Seasonal differencing of 1 is acceptable. 
+
+```{r}
+temps.zoo.avg.diff <- zoo(diff(diff(temps.date$WeeklyAverageDryBulbTemperature, lag = 52, differences = 1)), order.by = temps.date$dateYYYYMMDD)
+autoplot(temps.zoo.avg.diff)
+
+plot.acf.2 <- 
+  autoplot(acf(coredata(temps.zoo.avg.diff), na.action = na.pass, lag.max = 520, plot = FALSE))
+
+plot.pacf.2 <-
+  autoplot(pacf(coredata(temps.zoo.avg.diff), na.action = na.pass, lag.max = 520, plot = FALSE)) + ylab("PACF")
+
+grid.arrange(plot.acf.2, plot.pacf.2, ncol = 2)
+```
+
+There are 4 significant bars on successive years on the PACF plot and 1 significant bar on the ACF plot indicating a SARIMA(p,d,q)x(4,1,1) may be an appropriate fit for a seasonal model. With regards to the non-seaonal portion, the ACF plot trails off to zero after the third lag indicating that an MA(3) model may be a possibility. The first lag is not significant but these models can still be run as options. Some possible orders include AR(1) - AR(5). 
+
+Since the seaonal Autoregressive (SAR) correlations were stronger than the Seasonal Moving Average (SMA) correlations, models without a SMA will be considered.  Because AR and MA terms can work against each other, the approach for modeling will be to balance SMA with AR and SAR with MA terms. This will ensure that models are less likely to be overparameterized and provide conflicting output.
+
+## Transformations (or lacktherof)
+
+One particular principle worth sticking to is ensuring that any transformations that are applied do not remove the integrity of negative values. **While there are no negative weekly average Dry Bulb temperatures, any model should be able to predict them.** This rules out the log, square root, and power transformations. While log and square root are obvious, a power transformation cannot be applied because there is no way to *undo* a power value without knowing the original sign.
+
+# Fitting and Diagnostics
+
+Given previous observations, potential models include:
+
+- SARIMA(14,1,0)x(0,1,1)
+- SARIMA(8,1,0)x(0,1,1)
+- SARIMA(0,1,3)x(3,1,0)
+- SARIMA(0,1,5)x(3,1,0)
+- SARIMA(14,1,0)x(0,1,3)
+- SARIMA(8,1,0)x(0,1,3)
+
+
+```{r}
+temps.ts <- ts(temps$WeeklyAverageDryBulbTemperature, start = 1, frequency = 52)
+```
+
+## SARIMA(14,1,0)x(0,1,1)
+
+```{r message=FALSE, warning=FALSE}
+fit.m1410.011 <- sarima(temps.ts, p = 14, d = 1, q = 0, P = 0, D = 1, Q = 1, S = 52)
+fit.m1410.011
+```
+
+There are a couple outliers shown in the Standardized residual plot. There is a clear pattern in the ACF of the residuals which has alternating significant correlations every 6 months. The residuals appear to deviate from normality but the sample size is large enough where that is not a concern. Most of the parameters except AR(14) are considered signficant.
+
+## SARIMA(8,1,0)x(0,1,1)
+
+```{r message=FALSE, warning=FALSE}
+fit.m810.011 <- sarima(temps.ts, p = 8, d = 1, q = 0, P = 0, D = 1, Q = 1, S = 52)
+fit.m810.011
+```
+
+The plots here are similar to above indicating that while there are less parameters, this model does not appear to provide any improvement to the diagnostics. 
+
+MA can have the effect of *undoing* a difference while AR can have the effect of differencing. It is possible in these cases that including a SMA term has *undone* the differencing applied and the AR terms are not able to make up for it.
+
+## SARIMA(0,1,3)x(3,1,0)
+
+```{r message=FALSE, warning=FALSE}
+fit.m013.310 <- sarima(temps.ts, p = 0, d = 1, q = 3, P = 3, D = 1, Q = 0, S = 52)
+fit.m013.310
+```
+
+A seasonal pattern is still present the residuals indicating that there is still a trend that has not been accounted for in the data.
+
+## SARIMA(0,1,5)x(3,1,0)
+
+```{r message=FALSE, warning=FALSE}
+fit.m015.310 <- sarima(temps.ts, p = 0, d = 1, q = 5, P = 3, D = 1, Q = 0, S = 52)
+fit.m015.310
+```
+
+There are still a handful of outliers but with limited transformation options, not much can be done to mitigate their impact. There still appears to be a seasonal pattern in the residuals but it is less pronounced than the previous models. Normality is on par with the previous models. A small peak is visible in the Ljung-Box graph which is an improvement over a flat line. So far, this is the best model.
+
+
+## SARIMA(14,1,0)x(0,1,3)
+
+```{r message=FALSE, warning=FALSE}
+fit.m1410.013 <- sarima(temps.ts, p = 14, d = 1, q = 0, P = 0, D = 1, Q = 3, S = 52)
+fit.m1410.013
+```
+
+The Standardized Residuals, QQ Plot, and Ljung-Box plot match many of the previous models. A pronounced seasonal trend is present in the ACF Residual plot indicating that there is a trend in the data that has not been accounted for. 
+
+## SARIMA(8,1,0)x(0,1,3)
+
+```{r message=FALSE, warning=FALSE}
+# one should not use second differencing so this is the best model without using second differencing
+fit.m810.013 <- sarima(temps.ts, p = 8, d = 1, q = 0, P = 0, D = 1, Q = 3, S = 52)
+fit.m810.013
+```
+
+
+```{r}
+
+  data.frame(
+  MODEL = c(
+    "SARIMA(14,1,0)x(0,1,1)",
+    "SARIMA(8,1,0)x(0,1,1)",
+    "SARIMA(0,1,3)x(3,1,0)",
+    "SARIMA(0,1,5)x(3,1,0)",
+    "SARIMA(14,1,0)x(0,1,3)",
+    "SARIMA(8,1,0)x(0,1,3)"
+  ),
+  AICc = c(
+    fit.m1410.011$AICc,
+    fit.m810.011$AICc,
+    fit.m013.310$AICc,
+    fit.m015.310$AICc,
+    fit.m1410.013$AICc,
+    fit.m810.013$AICc
+  ),
+  AIC = c(
+    fit.m1410.011$AIC,
+    fit.m810.011$AIC,
+    fit.m013.310$AIC,
+    fit.m015.310$AIC,
+    fit.m1410.013$AIC,
+    fit.m810.013$AIC
+  ),
+  BIC = c(
+    fit.m1410.011$BIC,
+    fit.m810.011$BIC,
+    fit.m013.310$BIC,
+    fit.m015.310$BIC,
+    fit.m1410.013$BIC,
+    fit.m810.013$BIC
+  )
+) %>% arrange(BIC) %>% kable %>% kable_styling(full_width = F, bootstrap_options = "striped", latex_options = "hold_position")
+```
+
+# Forecasting
+
+While not the most ideal in terms of diagnostics, the model of choice is SARIMA(0,1,5)x(3,1,0) with a BIC of 6.404635. It appears that the data shows a stronger affinity for Autoregressive models opposed to Moving Average for the Seasonal parts of the model while the non-seasonal portions can be modeled better with a moving average.
+
+```{r}
+fore.mod <- sarima.for(temps.ts, p = 0, d = 1, q = 5, P = 3, D = 1, Q = 0, S = 52, n.ahead = 52)
+pred.mod <- temps.ts - ts(fit.m015.310$fit$residuals, frequency=52)
+
+tsplot(temps.ts, ylab="Average Weekly Temperature at O'Hare Int'l Airport", xlab="Year", type="o", main="Temperature Data")
+lines(pred.mod, col="red", type="o", pch=17) 
+legend("topright", legend=c("Observed", "Forecast"), lty=c("solid", "solid"), col=c("black", "red"), pch=c(1, 17), bty="n")
+```
+
+The predicted values combined with the confidence interval for the forecasted values very much mimic the peaks and valleys that have occurred before lending a sense of pragmatism to this model.
+
+# Discussion
+
+The questions initially posed were as follows:
+
+- Have Chicago Winters gotten warmer over the last 30 years?
+- Have Chicago Summers gotten warmer over the last 30 years?
+- What will the next year look like for Chicago based on the past 30?
+
+The first two questions can answered with the initial time-series plot of the data. Chicago summers have appeared to generally stay fairly consistent with regards to average temperatures. One could argue that winter is also consistent with temperature but it is also consistent with the fact that there are cyclic spikes that cause the temperature to fluctuate in both directions. This was surprising at first but provides somewhat of a realistic explanation for comments regarding the perceived difference in winter now versus 30 years ago.
+
+The last question was just answered. It will look much like it has the past 30 years, with a chance for it to be warmer or colder than average. This is not the most exciting conclusion to reach but it is comforting to know that while the winters may seem different, they are mostly different because due to our own experiences.
+
+## Further Improvements
+
+This analysis does not take into account other variables that are known to affect the perception of temperature. i.e. wind, precipitation, humidity, etc. It could be improved by analyzing those time series and incorporating them into this model for a "feels like" temperature. 
+
+This data could also be condensed to a smaller set to improve modeling time and throughput. Having temperature at the weekly grain makes the forecasts more pertinent but increases computation time. The same analysis would be interesting to do with against monthly average temperatures. While it would reduce forecasting power, it would make more complex models possible.
+
+More research into transformations that can be applied to negative values is warranted. Research was done regarding possible options but nothing conclusive arose.
+
+## Final Thoughts
+
+This model proves somewhat useful as a tool of understanding regarding local impacts by climate change. We can ascertain that Dry Bulb Temperature has not significantly changed in the past 30 years, nor does our model think it will going forward. 

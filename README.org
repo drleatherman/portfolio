@@ -1,0 +1,7 @@
+* Portfolio
+
+Welcome!
+
+This repository represents a living portfolio of my projects and experiments, primarily focused in Statistics, DS, and ML Realm. I started creating separate repositories for different projects but found that the information was getting decentralized so this brings it all together.
+
+Feel free to email me at dleatherman1391@gmail.com with questions, concerns, conundrums, or quandaries. Also feel free to open a Github Issue if you have questions or identify a problem.

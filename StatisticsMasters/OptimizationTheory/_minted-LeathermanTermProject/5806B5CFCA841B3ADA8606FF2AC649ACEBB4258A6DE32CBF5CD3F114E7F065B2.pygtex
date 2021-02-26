@@ -1,0 +1,273 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}   Make the Data}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+
+\PYG{n}{nrow} \PYG{p}{=} \PYG{l+m+mi}{60}\PYG{p}{;} \PYG{n}{dimN} \PYG{p}{=} \PYG{l+m+mi}{50}\PYG{p}{;}  \PYG{n}{Nsamples} \PYG{p}{=} \PYG{l+m+mi}{50}\PYG{p}{;} \PYG{n}{K} \PYG{p}{=} \PYG{l+m+mi}{4}\PYG{p}{;}
+\PYG{n+nb}{patch} \PYG{p}{=} \PYG{l+m+mi}{20} \PYG{o}{*} \PYG{n+nb}{ones}\PYG{p}{(}\PYG{l+m+mi}{28}\PYG{p}{,} \PYG{l+m+mi}{20}\PYG{p}{);}
+\PYG{n}{background} \PYG{p}{=} \PYG{n+nb}{zeros}\PYG{p}{(}\PYG{n}{nrow}\PYG{p}{,} \PYG{n}{dimN}\PYG{p}{);}
+\PYG{n}{seed} \PYG{p}{=} \PYG{l+m+mi}{13579}\PYG{p}{;}
+\PYG{n}{BigPrime} \PYG{p}{=} \PYG{p}{(}\PYG{l+m+mi}{2}\PYGZca{}\PYG{l+m+mi}{31}\PYG{p}{)} \PYG{o}{\PYGZhy{}} \PYG{l+m+mi}{1}\PYG{p}{;}
+
+\PYG{n}{Xmat} \PYG{p}{=} \PYG{n+nb}{zeros}\PYG{p}{(}\PYG{n}{nrow} \PYG{o}{*} \PYG{n}{dimN}\PYG{p}{,} \PYG{n}{Nsamples}\PYG{p}{);}
+
+\PYG{n+nb}{index} \PYG{p}{=} \PYG{l+m+mi}{1}\PYG{p}{;}
+
+\PYG{k}{for} \PYG{n}{corner1} \PYG{p}{=} \PYG{l+m+mi}{4}\PYG{p}{:}\PYG{l+m+mi}{8}
+     \PYG{k}{for} \PYG{n}{corner2} \PYG{p}{=} \PYG{l+m+mi}{4}\PYG{p}{:}\PYG{l+m+mi}{8}
+         \PYG{k}{for} \PYG{n}{jj} \PYG{p}{=} \PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{nrow}
+            \PYG{k}{for} \PYG{n}{kk} \PYG{p}{=} \PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{dimN}
+                \PYG{n}{seed} \PYG{p}{=} \PYG{n+nb}{mod}\PYG{p}{(}\PYG{l+m+mi}{16807} \PYG{o}{*} \PYG{n}{seed}\PYG{p}{,} \PYG{n}{BigPrime}\PYG{p}{);}
+                \PYG{n}{background}\PYG{p}{(}\PYG{n}{jj}\PYG{p}{,} \PYG{n}{kk}\PYG{p}{)} \PYG{p}{=} \PYG{l+m+mi}{4} \PYG{o}{*} \PYG{p}{(}\PYG{n}{seed} \PYG{o}{/} \PYG{n}{BigPrime}\PYG{p}{);}
+            \PYG{k}{end}
+         \PYG{k}{end}
+
+         \PYG{n}{picture} \PYG{p}{=} \PYG{n}{background}\PYG{p}{;}
+         \PYG{n}{picture}\PYG{p}{([(}\PYG{n}{corner1}\PYG{p}{):(}\PYG{n}{corner1} \PYG{o}{+} \PYG{l+m+mi}{27}\PYG{p}{)],[}\PYG{n}{corner2}\PYG{p}{:}\PYG{n}{corner2} \PYG{o}{+} \PYG{l+m+mi}{19}\PYG{p}{])} \PYG{p}{=} \PYG{n+nb}{patch}\PYG{p}{;}
+
+         \PYG{n}{Xmat}\PYG{p}{(:,}\PYG{n+nb}{index}\PYG{p}{)} \PYG{p}{=} \PYG{n+nb}{reshape}\PYG{p}{(}\PYG{n}{picture}\PYG{p}{,}\PYG{n}{nrow} \PYG{o}{*} \PYG{n}{dimN}\PYG{p}{,}\PYG{l+m+mi}{1}\PYG{p}{);}
+         \PYG{n+nb}{index} \PYG{p}{=} \PYG{n+nb}{index} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{;}
+     \PYG{k}{end}
+\PYG{k}{end}
+
+\PYG{k}{for} \PYG{n}{corner1} \PYG{p}{=} \PYG{l+m+mi}{26}\PYG{p}{:}\PYG{l+m+mi}{30}
+    \PYG{k}{for} \PYG{n}{corner2} \PYG{p}{=} \PYG{l+m+mi}{26}\PYG{p}{:}\PYG{l+m+mi}{30}
+         \PYG{k}{for} \PYG{n}{jj} \PYG{p}{=} \PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{nrow}
+            \PYG{k}{for} \PYG{n}{kk} \PYG{p}{=} \PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{dimN}
+                \PYG{n}{seed} \PYG{p}{=} \PYG{n+nb}{mod}\PYG{p}{(}\PYG{l+m+mi}{16807} \PYG{o}{*} \PYG{n}{seed}\PYG{p}{,} \PYG{n}{BigPrime}\PYG{p}{);}
+                \PYG{n}{background}\PYG{p}{(}\PYG{n}{jj}\PYG{p}{,}\PYG{n}{kk}\PYG{p}{)} \PYG{p}{=} \PYG{l+m+mi}{4} \PYG{o}{*} \PYG{p}{(}\PYG{n}{seed}\PYG{o}{/}\PYG{n}{BigPrime}\PYG{p}{);}
+            \PYG{k}{end}
+         \PYG{k}{end}
+
+        \PYG{n}{picture} \PYG{p}{=} \PYG{n}{background}\PYG{p}{;}
+        \PYG{n}{picture}\PYG{p}{([(}\PYG{n}{corner1}\PYG{p}{):(}\PYG{n}{corner1} \PYG{o}{+} \PYG{l+m+mi}{27}\PYG{p}{)],[}\PYG{n}{corner2}\PYG{p}{:}\PYG{n}{corner2} \PYG{o}{+} \PYG{l+m+mi}{19}\PYG{p}{])} \PYG{p}{=} \PYG{n+nb}{patch}\PYG{p}{;}
+
+        \PYG{n}{Xmat}\PYG{p}{(:,}\PYG{n+nb}{index}\PYG{p}{)} \PYG{p}{=} \PYG{n+nb}{reshape}\PYG{p}{(}\PYG{n}{picture}\PYG{p}{,}\PYG{n}{nrow} \PYG{o}{*} \PYG{n}{dimN}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{);}
+        \PYG{n+nb}{index} \PYG{p}{=} \PYG{n+nb}{index} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{;}
+    \PYG{k}{end}
+\PYG{k}{end}
+
+
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{} Step 1 of the Algorithm}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{} Find the distance between each pair of data points x\PYGZus{}j and x\PYGZus{}k}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{} For each data point, find its K nearest neighbours}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+
+\PYG{c}{\PYGZpc{} instantiate dist matrix}
+\PYG{n}{dist} \PYG{p}{=} \PYG{n+nb}{zeros}\PYG{p}{(}\PYG{n}{dimN}\PYG{p}{,} \PYG{n}{dimN}\PYG{p}{);}
+
+\PYG{c}{\PYGZpc{} iterate over pairs of to avoid a nested for\PYGZhy{}loop}
+\PYG{k}{for} \PYG{n}{idx\PYGZus{}pair} \PYG{p}{=} \PYG{n+nb}{nchoosek}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{dimN}\PYG{p}{,} \PYG{l+m+mi}{2}\PYG{p}{)}\PYG{o}{\PYGZsq{}}
+
+  \PYG{n}{a} \PYG{p}{=} \PYG{n}{idx\PYGZus{}pair}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+  \PYG{n}{b} \PYG{p}{=} \PYG{n}{idx\PYGZus{}pair}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{);}
+
+  \PYG{c}{\PYGZpc{} calculate distance via euclidean dist}
+  \PYG{n}{dist\PYGZus{}i} \PYG{p}{=} \PYG{n+nb}{norm}\PYG{p}{(}\PYG{n}{Xmat}\PYG{p}{(:,} \PYG{n}{b}\PYG{p}{)} \PYG{o}{\PYGZhy{}} \PYG{n}{Xmat}\PYG{p}{(:,} \PYG{n}{a}\PYG{p}{));}
+
+  \PYG{c}{\PYGZpc{} Populate the coords for the matrix}
+  \PYG{c}{\PYGZpc{} This creates a symmetric matrix of distances}
+  \PYG{c}{\PYGZpc{} the diagonal is always 0 since the distance between an element and itself is 0.}
+  \PYG{n}{dist}\PYG{p}{(}\PYG{n}{a} \PYG{p}{,} \PYG{n}{b}\PYG{p}{)} \PYG{p}{=} \PYG{n}{dist\PYGZus{}i}\PYG{p}{;}
+  \PYG{n}{dist}\PYG{p}{(}\PYG{n}{b} \PYG{p}{,} \PYG{n}{a}\PYG{p}{)} \PYG{p}{=} \PYG{n}{dist\PYGZus{}i}\PYG{p}{;}
+\PYG{k}{end}
+
+\PYG{c}{\PYGZpc{} sort each vector in asc order}
+\PYG{p}{[}\PYG{n}{dist\PYGZus{}srt}\PYG{p}{,} \PYG{n}{idx}\PYG{p}{]} \PYG{p}{=} \PYG{n+nb}{sort}\PYG{p}{(}\PYG{n}{dist}\PYG{p}{);}
+
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{} each column stores the K nearest neighbours for that data point}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+
+\PYG{c}{\PYGZpc{} ignore first value because its always 0 since it refers}
+\PYG{c}{\PYGZpc{} to the column value}
+\PYG{n}{knn} \PYG{p}{=} \PYG{n}{idx}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{:}\PYG{n}{K} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{,} \PYG{p}{:);}
+
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{} Step 2 of the Algorithm}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{} Solve for the weights for each data point}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+
+
+\PYG{n}{weights} \PYG{p}{=} \PYG{p}{[];}
+\PYG{k}{for} \PYG{n}{col} \PYG{p}{=} \PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{dimN}
+  \PYG{n}{G} \PYG{p}{=} \PYG{n+nb}{zeros}\PYG{p}{(}\PYG{n}{K}\PYG{p}{,} \PYG{n}{K}\PYG{p}{);}
+  \PYG{k}{for} \PYG{n}{coords} \PYG{p}{=} \PYG{p}{[}\PYG{n+nb}{nchoosek}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{K}\PYG{p}{,} \PYG{l+m+mi}{2}\PYG{p}{);} \PYG{n+nb}{repmat}\PYG{p}{((}\PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{K}\PYG{p}{)}\PYG{o}{\PYGZsq{}}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{,} \PYG{l+m+mi}{2}\PYG{p}{)]}\PYG{o}{\PYGZsq{}}
+
+    \PYG{n}{r} \PYG{p}{=} \PYG{n}{coords}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+    \PYG{n}{c} \PYG{p}{=} \PYG{n}{coords}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{);}
+
+    \PYG{n}{g} \PYG{p}{=} \PYG{p}{(}\PYG{n}{Xmat}\PYG{p}{(:,} \PYG{n}{col}\PYG{p}{)} \PYG{o}{\PYGZhy{}} \PYG{n}{Xmat}\PYG{p}{(:,} \PYG{n}{knn}\PYG{p}{(}\PYG{n}{c}\PYG{p}{,} \PYG{n}{col}\PYG{p}{)))}\PYG{o}{\PYGZsq{}} \PYG{o}{*} \PYG{p}{(}\PYG{n}{Xmat}\PYG{p}{(:,} \PYG{n}{col}\PYG{p}{)} \PYG{o}{\PYGZhy{}} \PYG{n}{Xmat}\PYG{p}{(:,} \PYG{n}{knn}\PYG{p}{(}\PYG{n}{r}\PYG{p}{,} \PYG{n}{col}\PYG{p}{)));}
+
+    \PYG{n}{G}\PYG{p}{(}\PYG{n}{r}\PYG{p}{,} \PYG{n}{c}\PYG{p}{)} \PYG{p}{=} \PYG{n}{g}\PYG{p}{;}
+    \PYG{n}{G}\PYG{p}{(}\PYG{n}{c}\PYG{p}{,} \PYG{n}{r}\PYG{p}{)} \PYG{p}{=} \PYG{n}{g}\PYG{p}{;}
+  \PYG{k}{end}
+
+  \PYG{c}{\PYGZpc{} Apply regularization to weights to guarantee G is non\PYGZhy{}singular (and thus invertible)}
+  \PYG{n}{weight\PYGZus{}i} \PYG{p}{=} \PYG{n+nb}{inv}\PYG{p}{(}\PYG{n}{G} \PYG{o}{+} \PYG{l+m+mf}{0.001} \PYG{o}{*} \PYG{n+nb}{eye}\PYG{p}{(}\PYG{n}{K}\PYG{p}{))} \PYG{o}{*} \PYG{n+nb}{ones}\PYG{p}{(}\PYG{n}{K}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{);}
+
+  \PYG{c}{\PYGZpc{} adjust the weights so they sum to one.}
+  \PYG{c}{\PYGZpc{} thus satisifying the constraint that weights must sum to one.}
+  \PYG{n}{adj\PYGZus{}weight\PYGZus{}i} \PYG{p}{=} \PYG{n}{weight\PYGZus{}i} \PYG{o}{/} \PYG{n+nb}{sum}\PYG{p}{(}\PYG{n}{weight\PYGZus{}i}\PYG{p}{);}
+  \PYG{n}{weights} \PYG{p}{=} \PYG{p}{[}\PYG{n}{weights} \PYG{n}{adj\PYGZus{}weight\PYGZus{}i}\PYG{p}{];}
+\PYG{k}{end}
+
+
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}  Step 3 of the Algorithm}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}  Compute the M matrix, call it M\PYGZus{}mat}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+
+\PYG{n}{ident} \PYG{p}{=} \PYG{n+nb}{eye}\PYG{p}{(}\PYG{n}{dimN}\PYG{p}{);}
+
+\PYG{c}{\PYGZpc{} get pairs of 1\PYGZhy{}50 and 1\PYGZhy{}4}
+\PYG{c}{\PYGZpc{} [1 1; 1 2; 1 3; 1 4; ... 50 1; 50 2; 50 3; 50 4]}
+
+\PYG{n}{weights2} \PYG{p}{=} \PYG{n+nb}{zeros}\PYG{p}{(}\PYG{n}{dimN}\PYG{p}{:}\PYG{n}{dimN}\PYG{p}{);}
+\PYG{n}{Klist} \PYG{p}{=} \PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{K}\PYG{p}{];}
+\PYG{c}{\PYGZpc{} get all combinations.}
+\PYG{k}{for} \PYG{n}{coords} \PYG{p}{=} \PYG{n+nb}{nchoosek}\PYG{p}{([}\PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{dimN}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{K}\PYG{p}{],} \PYG{l+m+mi}{2}\PYG{p}{)}\PYG{o}{\PYGZsq{}}
+  \PYG{n}{r} \PYG{p}{=} \PYG{n}{coords}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+  \PYG{n}{c} \PYG{p}{=} \PYG{n}{coords}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{);}
+
+  \PYG{c}{\PYGZpc{} only act on combinations where operating on 1:K}
+  \PYG{c}{\PYGZpc{} Would be better to filter this out upfront}
+  \PYG{k}{if} \PYG{n+nb}{ismember}\PYG{p}{(}\PYG{n}{r}\PYG{p}{,} \PYG{n}{Klist}\PYG{p}{)}
+    \PYG{n}{weights2}\PYG{p}{(}\PYG{n}{c}\PYG{p}{,} \PYG{n}{knn}\PYG{p}{(}\PYG{n}{r}\PYG{p}{,} \PYG{n}{c}\PYG{p}{))} \PYG{p}{=} \PYG{n}{weights}\PYG{p}{(}\PYG{n}{r}\PYG{p}{,} \PYG{n}{c}\PYG{p}{);}
+  \PYG{k}{endif}
+\PYG{k}{end}
+
+\PYG{n}{M\PYGZus{}mat} \PYG{p}{=} \PYG{p}{(}\PYG{n}{ident} \PYG{o}{\PYGZhy{}} \PYG{n}{weights2}\PYG{p}{)}\PYG{o}{\PYGZsq{}} \PYG{o}{*} \PYG{p}{(}\PYG{n}{ident} \PYG{o}{\PYGZhy{}} \PYG{n}{weights2}\PYG{p}{);}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{} compute the eigenvectors of the matrix M\PYGZus{}mat}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+
+\PYG{p}{[}\PYG{n}{V}\PYG{p}{,} \PYG{n}{D}\PYG{p}{]} \PYG{p}{=} \PYG{n+nb}{eig}\PYG{p}{(}\PYG{n}{M\PYGZus{}mat}\PYG{p}{);}
+
+\PYG{n}{d} \PYG{p}{=} \PYG{l+m+mi}{2}\PYG{p}{;}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{} if the two smallest eigenvalues are both zero,}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{} then use the eigenvectors in the third and fourth column of matrix V.}
+\PYG{k}{if} \PYG{n+nb}{diag}\PYG{p}{(}\PYG{n}{D}\PYG{p}{)(}\PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{d}\PYG{p}{)} \PYG{o}{==} \PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{;} \PYG{l+m+mi}{0}\PYG{p}{]}
+  \PYG{c}{\PYGZpc{} interested in the (d + 1)st coordinate so 1 is added}
+  \PYG{n}{Y\PYGZus{}mat} \PYG{p}{=} \PYG{n}{V}\PYG{p}{(:,} \PYG{p}{(}\PYG{n}{d} \PYG{o}{+} \PYG{l+m+mi}{2}\PYG{p}{):(}\PYG{n}{d} \PYG{o}{+} \PYG{n}{d} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{));}
+\PYG{k}{else}
+  \PYG{n}{Y\PYGZus{}mat} \PYG{p}{=} \PYG{n}{V}\PYG{p}{(:,} \PYG{l+m+mi}{2}\PYG{p}{:(}\PYG{n}{d} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{));}
+\PYG{k}{endif}
+
+\PYG{n}{x\PYGZus{}axis} \PYG{p}{=} \PYG{n}{Y\PYGZus{}mat}\PYG{p}{(:,} \PYG{l+m+mi}{1}\PYG{p}{);}
+
+\PYG{n}{y\PYGZus{}axis} \PYG{p}{=} \PYG{n}{Y\PYGZus{}mat}\PYG{p}{(:,} \PYG{l+m+mi}{2}\PYG{p}{);}
+
+\PYG{n+nb}{scatter}\PYG{p}{(}\PYG{n}{x\PYGZus{}axis}\PYG{p}{,} \PYG{n}{y\PYGZus{}axis}\PYG{p}{)}
+
+
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}   Verfiy that the calculation of matrix M\PYGZus{}mat is done correctly.}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}   NOTE: This part is Optional.  Only do this if you wish to discuss your project in job interviews.}
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}\PYGZpc{}}
+
+\PYG{c}{\PYGZpc{} Ugly brute force code just to make sure the answers are right.}
+\PYG{n}{cost1} \PYG{p}{=} \PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{k}{for} \PYG{n}{i} \PYG{p}{=} \PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{dimN}
+  \PYG{k}{for} \PYG{n}{j} \PYG{p}{=} \PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{dimN}
+    \PYG{n}{cost1} \PYG{p}{=} \PYG{n}{cost1} \PYG{o}{+} \PYG{n}{M\PYGZus{}mat}\PYG{p}{(}\PYG{n}{i}\PYG{p}{,}\PYG{n}{j}\PYG{p}{)} \PYG{o}{*} \PYG{p}{(}\PYG{n}{V}\PYG{p}{(:,} \PYG{n}{i}\PYG{p}{)}\PYG{o}{\PYGZsq{}} \PYG{o}{*} \PYG{n}{V}\PYG{p}{(:,} \PYG{n}{j}\PYG{p}{));}
+  \PYG{k}{end}
+\PYG{k}{end}
+
+\PYG{n}{cost2} \PYG{p}{=} \PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{k}{for} \PYG{n}{i} \PYG{p}{=} \PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{dimN}
+  \PYG{n}{innercost} \PYG{p}{=} \PYG{l+m+mi}{0}\PYG{p}{;}
+  \PYG{k}{for} \PYG{n}{j} \PYG{p}{=} \PYG{l+m+mi}{1}\PYG{p}{:}\PYG{n}{dimN}
+    \PYG{c}{\PYGZpc{} Use the sparse weights matrix used to calculate M}
+    \PYG{n}{innercost} \PYG{p}{=} \PYG{n}{innercost} \PYG{o}{+} \PYG{n}{weights2}\PYG{p}{(}\PYG{n}{i}\PYG{p}{,}\PYG{n}{j}\PYG{p}{)} \PYG{o}{*} \PYG{n}{V}\PYG{p}{(:,} \PYG{n}{j}\PYG{p}{);}
+  \PYG{k}{end}
+  \PYG{n}{cost2} \PYG{p}{=} \PYG{n}{cost2} \PYG{o}{+} \PYG{p}{((}\PYG{n}{V}\PYG{p}{(:,} \PYG{n}{i}\PYG{p}{)} \PYG{o}{\PYGZhy{}} \PYG{n}{innercost}\PYG{p}{)} \PYG{o}{.\PYGZca{}} \PYG{l+m+mi}{2}\PYG{p}{);}
+\PYG{k}{end}
+
+\PYG{c}{\PYGZpc{} cost2 is a vector so sum the vector to get the cost}
+\PYG{n}{cost2} \PYG{p}{=} \PYG{n+nb}{sum}\PYG{p}{(}\PYG{n}{cost2}\PYG{p}{)}
+
+\PYG{c}{\PYGZpc{} round to the nth precision}
+\PYG{n}{round2} \PYG{p}{=} \PYG{p}{@(}\PYG{n}{x}\PYG{p}{,} \PYG{n}{n}\PYG{p}{=}\PYG{l+m+mi}{0}\PYG{p}{)} \PYG{n+nb}{round} \PYG{p}{(}\PYG{n}{x} \PYG{o}{*} \PYG{l+m+mi}{10}\PYGZca{}\PYG{n}{n}\PYG{p}{)} \PYG{o}{*} \PYG{l+m+mi}{10}\PYGZca{}\PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{n}{n}\PYG{p}{)}
+
+\PYG{c}{\PYGZpc{} trailing digits differ slightly so rounding for equality check}
+\PYG{k}{if} \PYG{n}{round2}\PYG{p}{(}\PYG{n}{cost1}\PYG{p}{,} \PYG{l+m+mi}{5}\PYG{p}{)} \PYG{o}{==} \PYG{n}{round2}\PYG{p}{(}\PYG{n}{cost2}\PYG{p}{,} \PYG{l+m+mi}{5}\PYG{p}{)}
+  \PYG{n+nb}{disp}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}M\PYGZus{}mat calculated correctly!\PYGZdq{}}\PYG{p}{)}
+\PYG{k}{else}
+  \PYG{n+nb}{disp}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}M\PYGZus{}mat values do not match. Check calculations\PYGZdq{}}\PYG{p}{)}
+\PYG{k}{endif}
+
+\PYG{c}{\PYGZpc{}\PYGZpc{}\PYGZpc{} Code for Project output}
+\PYG{c}{\PYGZpc{} plot 3 and 4th eigenvectors}
+\PYG{n+nb}{scatter}\PYG{p}{(}\PYG{n}{V}\PYG{p}{(:,} \PYG{l+m+mi}{3}\PYG{p}{),} \PYG{n}{V}\PYG{p}{(:,} \PYG{l+m+mi}{4}\PYG{p}{))}
+
+\PYG{c}{\PYGZpc{} plot 4th and 5th eigenvectors}
+\PYG{n+nb}{scatter}\PYG{p}{(}\PYG{n}{V}\PYG{p}{(:,} \PYG{l+m+mi}{4}\PYG{p}{),} \PYG{n}{V}\PYG{p}{(:,} \PYG{l+m+mi}{5}\PYG{p}{))}
+
+\PYG{c}{\PYGZpc{} output of third eigenvector}
+\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{V}\PYG{p}{(:,} \PYG{l+m+mi}{3}\PYG{p}{)}
+\PYG{n}{ans} \PYG{p}{=}
+
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.00000}
+   \PYG{l+m+mf}{0.26858}
+   \PYG{l+m+mf}{0.16758}
+   \PYG{l+m+mf}{0.00685}
+  \PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.15590}
+  \PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.25706}
+   \PYG{l+m+mf}{0.27351}
+   \PYG{l+m+mf}{0.16837}
+   \PYG{l+m+mf}{0.00448}
+  \PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.15856}
+  \PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.26613}
+   \PYG{l+m+mf}{0.27321}
+   \PYG{l+m+mf}{0.17129}
+   \PYG{l+m+mf}{0.00156}
+  \PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.17057}
+  \PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.27476}
+   \PYG{l+m+mf}{0.26851}
+   \PYG{l+m+mf}{0.16263}
+  \PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.00271}
+  \PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.16942}
+  \PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.27619}
+   \PYG{l+m+mf}{0.26031}
+   \PYG{l+m+mf}{0.15909}
+  \PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.00812}
+  \PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.17194}
+  \PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.27460}
+\end{Verbatim}
