@@ -1840,7 +1840,7 @@ $\underset{(p - 1) \times 1}{b^R} =\begin{bmatrix}
 b_1^R\\
 ...\\
 b_{p - 1}^R
-\end{bmatrix}
+\end{bmatrix}$
 
 $b^R = (r_{XX} + cI)^{-1} r_{XY}$
 
