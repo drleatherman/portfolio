@@ -686,3 +686,7 @@ def run(plot_summaries=True):
 
     log.info("Best alpha for Ridge Regression: {}".format(rr_fitted.alpha_))
     log.info("Best score for Ridge Regression: {}".format(rr_score))
+
+
+if __name__ == "__main__":
+    run(False)
