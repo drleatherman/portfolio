@@ -627,8 +627,6 @@ def fit_OLS(X, y, K=10):
     kfold = KFold(n_splits=K, shuffle=True, random_state=12345)
 
     for i, (train, test) in enumerate(kfold.split(X, y)):
-        print(train)
-        print(test)
         model.fit(X.iloc[train], y.iloc[train])
         score = model.score(X.iloc[test], y.iloc[test])
         scores.append(score)
@@ -644,13 +642,13 @@ def fit_OLS_statsmodels(X, y):
 
 
 def fit_RidgeCV(X, y, K=10):
-    n_alphas = 10
-    alphas = np.logspace(-10, -2, n_alphas)
-
+    #    alphas = np.logspace(-10, -2, n_alphas)
+    n_alphas = 200
+    alphas = np.logspace(-10, 6, n_alphas)
     # standardize features for Ridge Regression
     scaler = StandardScaler()
     X_trans = scaler.fit_transform(X)
-    rr = RidgeCV(alphas=alphas, cv=K)
+    rr = RidgeCV(alphas=alphas)
     rr.fit(X_trans, y)
     score = rr.score(X_trans, y)
     return rr, score
@@ -661,6 +659,100 @@ def calc_vif(X):
     vif["variable"] = X.columns
     vif["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
     return vif.sort_values("VIF", ascending=False)
+
+
+def model_summary(model):
+    """
+    Return a DataFrame containing model summary statistics.
+    """
+    model_df = pd.DataFrame()
+
+    # model values
+    model_df["fitted"] = model.fittedvalues
+    # residuals
+    model_df["residuals"] = model.resid
+    # normalized residuals
+    model_df["norm_residuals"] = model.get_influence().resid_studentized_internal
+    # absoluate squared normalized residuals
+    model_df["abs_sq_norm_residuals"] = model_df["norm_residuals"].apply(
+        lambda _: np.sqrt(np.abs(_))
+    )
+    # absolute residuals
+    model_df["abs_residuals"] = model_df["residuals"].apply(np.abs)
+    # leverage
+    model_df["leverage"] = model.get_influence().hat_matrix_diag
+    # Cook's Distance
+    model_df["cooks"] = model.get_influence().cooks_distance[0]
+
+    model_df = model_df.reset_index()
+    return model_df
+
+
+def residual_plots(regression_res):
+    """
+    Generate the following residual plots:
+    1. Fitted vs Residuals
+
+    :regression_rs: statsmodels.regression.linear_model.RegressionResults - A fitted model using the statsmodels library
+    """
+
+    model_df = model_summary(regression_res)
+    # determine outliers. This is not the best way to do it but it's clear from the residuals that
+    # the outliers in this case match this logic.
+    model_df["index_label"] = model_df.where(lambda _: abs(_.residuals) > 1)[
+        "index"
+    ].replace(np.nan, "")
+    (
+        ggplot(model_df)
+        + aes(x="fitted", y="residuals")
+        + geom_smooth(color="red", method="loess")
+        + geom_hline(yintercept=0, linetype="dotted")
+        + geom_point()
+        # highlight outliers with text labels
+        + geom_text(
+            aes(label="index_label", size=10), show_legend=False, ha="left", va="top"
+        )
+        + labs(x="Fitted Values", y="Residuals", title="Fitted vs. Residuals")
+    ).draw()
+
+
+def plot_ridge_path(X, y):
+    """
+    Taken from https://scikit-learn.org/stable/auto_examples/linear_model/plot_ridge_path.html
+    """
+    import matplotlib.pyplot as plt
+    from sklearn import linear_model
+    from matplotlib.pyplot import figure
+
+    figure(num=None, figsize=(8, 6), dpi=80, facecolor="w", edgecolor="k")
+    # #############################################################################
+    # Compute paths
+
+    n_alphas = 200
+    alphas = np.logspace(-10, 6, n_alphas)
+    # alphas = np.logspace(6, -3, n_alphas)
+    scaler = StandardScaler()
+    X_trans = scaler.fit_transform(X)
+
+    coefs = []
+    for a in alphas:
+        ridge = linear_model.Ridge(alpha=a)
+        ridge.fit(X_trans, y)
+        coefs.append(ridge.coef_)
+
+    # #############################################################################
+    # Display results
+
+    ax = plt.gca()
+
+    ax.plot(alphas, coefs)
+    ax.set_xscale("log")
+    ax.set_xlim(ax.get_xlim()[::-1])  # reverse axis
+    plt.xlabel("alpha")
+    plt.ylabel("weights")
+    plt.title("Ridge coefficients as a function of the regularization")
+    plt.axis("tight")
+    plt.show()
 
 
 def run(plot_summaries=True):
@@ -683,9 +775,11 @@ def run(plot_summaries=True):
     log.info(sm_ols.summary())
 
     rr_fitted, rr_score = fit_RidgeCV(X, y)
-
     log.info("Best alpha for Ridge Regression: {}".format(rr_fitted.alpha_))
     log.info("Best score for Ridge Regression: {}".format(rr_score))
+
+    # pair coefficients back with column names
+    rr_coefs = {k: v for k, v in zip(X.columns.values, rr_fitted.coef_)}
 
 
 if __name__ == "__main__":
