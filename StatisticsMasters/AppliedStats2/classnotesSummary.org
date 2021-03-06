@@ -553,13 +553,15 @@ only a few to be in the regression model.
 Strategy: find a subset of good models, then restrict attention to those
 that follow good practice.
 
-Concepts * There are different approaches * Compare models with model
-selection criteria - AIC - BIC * Generally a few good models are
-considered, not just the "best model"
+Concepts
+- There are different approaches
+- Compare models with model selection criteria - AIC - BIC
+- Generally a few good models are considered, not just the "best model"
 
-Problems * Can't trust inference after variable selection - Why? Because
-we only include significant variables * Model selection criteria are
-subject to variability
+Problems
+- Can't trust inference after variable selection
+  + Why? Because we only include significant variables
+- Model selection criteria are subject to variability
 
 Legitimate uses * Adjust for a large set of explanatory variables -
 Large # of variables to account for but not of direct interest. Do

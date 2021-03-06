@@ -3,4 +3,5 @@
 This represents a list of papers that I have found interesting and would like to keep for future reference.
 
 - [[https://poseidon01.ssrn.com/delivery.php?ID=615100008007025080108087125073030068002059093093031010095069005067124123072107021099058027096058051040011089096000091009112008108058062055076070123083067096108121070065059085125011119019083065085019013004002115074076019116004107115104065084121112008026&EXT=pdf&INDEX=TRUE][Dealing with Logs and Zeroes in Regression Models]]. [[https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3444996][Source]]
+- [[https://academic.oup.com/bioinformatics/article/23/19/2507/185254?login=true][Feature Selection Techniques for High Dimensional Datasets]] 
   
