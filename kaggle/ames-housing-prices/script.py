@@ -1,22 +1,27 @@
 #!/usr/bin/env jupyter-console
 
-import math
 import logging
 import os
+import time
+from itertools import islice
+
+import matplotlib.pyplot as plt
 import numpy as np  # linear algebra
 import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
-from plotnine import *  # plotting
-from itertools import islice
-from sklearn.experimental import enable_iterative_imputer
-from sklearn.impute import IterativeImputer
-from statsmodels.stats.outliers_influence import variance_inflation_factor
 import statsmodels.api as sm
-from sklearn.model_selection import KFold
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import Ridge
-from sklearn.linear_model import RidgeCV
-from sklearn.preprocessing import StandardScaler
+from plotnine import *  # plotting
+from sklearn.compose import make_column_transformer
+from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
+from sklearn.impute import IterativeImputer, SimpleImputer
+from sklearn.linear_model import LassoCV, LinearRegression, RidgeCV
+from sklearn.model_selection import KFold, cross_val_predict, cross_validate
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler
+from sklearn.utils import shuffle
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+from sklearn.experimental import enable_iterative_imputer
 
+SEED = 12345
 ORD_COND_LS = ["Ex", "Gd", "TA", "Fa", "Po", "NA"]
 
 ORDINAL_VARS = [
@@ -157,7 +162,8 @@ def apply_imputation(df, cols_to_exclude=[]):
     # 2. YrSold, MoSol. These are to be included as factors in the model to avoid dealing with autocorrelation, which would have to be accounted for here if used in as a numeric.
     # 3. Id. It's an identifier and meaningless in the context of regression.
     data_pre_imp = (
-        df.select_dtypes(include=np.number).copy().drop(cols_to_exclude, axis=1)
+        df.select_dtypes(include=np.number).copy().drop(
+            cols_to_exclude, axis=1)
     )
 
     # impute mean using sklearn
@@ -181,7 +187,8 @@ def get_area_cols(df):
 
 def filter_suffix(ls, df, suffix="log"):
     return list(
-        map(lambda _: _ + "_" + suffix if (_ + suffix) not in df.columns else _, ls)
+        map(lambda _: _ + "_" + suffix if (_ + suffix)
+            not in df.columns else _, ls)
     )
 
 
@@ -226,15 +233,18 @@ def add_indicators(data):
     saletype_indicators = pd.get_dummies(
         data.SaleType, prefix="SaleType", drop_first=True
     )
-    yearsold_indicators = pd.get_dummies(data.YrSold, prefix="YrSold", drop_first=True)
-    monthsold_indicators = pd.get_dummies(data.MoSold, prefix="MoSold", drop_first=True)
+    yearsold_indicators = pd.get_dummies(
+        data.YrSold, prefix="YrSold", drop_first=True)
+    monthsold_indicators = pd.get_dummies(
+        data.MoSold, prefix="MoSold", drop_first=True)
     rootmatl_indicators = pd.get_dummies(
         data.RoofMatl, prefix="RoofMatl", drop_first=True
     )
     exterqual_indicators = pd.get_dummies(
         data.ExterQual, prefix="ExterQual", drop_first=True
     )
-    poolqc_indicators = pd.get_dummies(data.PoolQC, prefix="PoolQC", drop_first=True)
+    poolqc_indicators = pd.get_dummies(
+        data.PoolQC, prefix="PoolQC", drop_first=True)
     kitchenqual_indicators = pd.get_dummies(
         data.KitchenQual, prefix="KitchenQual", drop_first=True
     )
@@ -247,7 +257,8 @@ def add_indicators(data):
     heatingqc_indicators = pd.get_dummies(
         data.HeatingQC, prefix="HeatingQC", drop_first=True
     )
-    street_indicators = pd.get_dummies(data.Street, prefix="Street", drop_first=True)
+    street_indicators = pd.get_dummies(
+        data.Street, prefix="Street", drop_first=True)
     garagetype_indicators = pd.get_dummies(
         data.GarageType, prefix="GarageType", drop_first=True
     )
@@ -303,8 +314,24 @@ def apply_trans(df):
     df[area_cols_renamed] = df[area_cols].apply(np.log)
 
     # new columns
-    df["HasExtraGarage"] = (df.MiscFeature == "Gar2").astype("int")
+    # df["HasExtraGarage"] = (df.MiscFeature == "Gar2").astype("int")
     df = add_indicators(df)
+    return df
+
+
+def apply_trans2(df):
+
+    # Replace "NA" categories with "MISSING"
+    cat_cols = df.columns[df.dtypes == "O"]
+    categories = [df[column].unique() for column in df[cat_cols]]
+
+    for cat in categories:
+        cat[cat == None] = "MISSING"
+
+    # apply log transformations
+    for col in ["1stFlrSF", "GrLivArea", "LotFrontage", "SalePrice"]:
+        df[col + "_log"] = df[col].apply(np.log)
+
     return df
 
 
@@ -332,10 +359,6 @@ def get_dataset(path):
     for _ in CATEGORICAL_VARS:
         data[_] = pd.Categorical(data[_])
 
-    # make LotFrontage a continuous variable
-    # data.LotFrontage = data.LotFron# tage.replace("NA", np.nan).astype("float")
-    # data.MasVnrArea = data.MasVnrArea.replace("NA", np.nan).astype("float")
-
     # apply data cleansing operations
     data = apply_cleansing(data)
 
@@ -346,6 +369,17 @@ def get_dataset(path):
 
     # apply transformations
     data = apply_trans(data)
+    return data
+
+
+def get_dataset2(path):
+    data = pd.read_csv(path)
+
+    # apply data cleansing operations
+    data = apply_cleansing(data)
+
+    # apply transformations
+    data = apply_trans2(data)
     return data
 
 
@@ -364,7 +398,8 @@ def gen_logtrans_plots(data):
         ggplot(data)
         + aes(x="SalePrice_log")
         + geom_histogram()
-        + labs(x="Log Sale Price (USD)", y="Count", title="Adjusted Sale Price")
+        + labs(x="Log Sale Price (USD)", y="Count",
+               title="Adjusted Sale Price")
         # + theme(figure_size = (6.4, 4.8))
     ).draw()
 
@@ -397,7 +432,8 @@ def gen_logtrans_plots(data):
     log.debug(output)
 
     (
-        ggplot(melted_df_raw.where(lambda _: _.variable.isin(output[0])).dropna())
+        ggplot(melted_df_raw.where(
+            lambda _: _.variable.isin(output[0])).dropna())
         + aes(x="value")
         + geom_histogram()
         + facet_wrap("variable", scales="free")
@@ -409,7 +445,8 @@ def gen_logtrans_plots(data):
     ).draw()
 
     (
-        ggplot(melted_df_raw.where(lambda _: _.variable.isin(output[1])).dropna())
+        ggplot(melted_df_raw.where(
+            lambda _: _.variable.isin(output[1])).dropna())
         + aes(x="value")
         # had trouble with the binwidth with all of these variables together.
         # Left this as-is since I was able to figure out what I needed from the graphs.
@@ -461,7 +498,8 @@ def gen_scatter_plots(data):
         + geom_point()
         + geom_smooth(color="red")
         + facet_wrap("variable", scales="free")
-        + labs(x="", y="Sale Price (K)", title="Sales Price vs Continuous Variables")
+        + labs(x="", y="Sale Price (K)",
+               title="Sales Price vs Continuous Variables")
         +
         # adjust x and y axis' so that the scales show up nicely
         # set the figure size to be wider so it takes up the whole screen
@@ -476,7 +514,8 @@ def gen_scatter_plots(data):
 def gen_cat_plots(data):
 
     # not a great use of a generator. Mainly used to transform list(dict.keys()) -> list(keys) in a single line
-    ord_colnames = list(map(lambda _: next(k for k, v in _.items()), ORDINAL_VARS))
+    ord_colnames = list(
+        map(lambda _: next(k for k, v in _.items()), ORDINAL_VARS))
     names = ord_colnames + CATEGORICAL_VARS + ["Id", "SalePrice_log"]
 
     amenities_ls = [
@@ -530,11 +569,16 @@ def gen_cat_plots(data):
         .dropna()
     )
 
-    df_bsmt = melted_df2.where(lambda _: _.variable.str.contains("Bsmt")).dropna()
-    df_garage = melted_df2.where(lambda _: _.variable.str.contains("Garage")).dropna()
-    df_amenities = melted_df2.where(lambda _: _.variable.isin(amenities_ls)).dropna()
-    df_external = melted_df2.where(lambda _: _.variable.isin(external_ls)).dropna()
-    df_internal = melted_df2.where(lambda _: _.variable.isin(internal_ls)).dropna()
+    df_bsmt = melted_df2.where(
+        lambda _: _.variable.str.contains("Bsmt")).dropna()
+    df_garage = melted_df2.where(
+        lambda _: _.variable.str.contains("Garage")).dropna()
+    df_amenities = melted_df2.where(
+        lambda _: _.variable.isin(amenities_ls)).dropna()
+    df_external = melted_df2.where(
+        lambda _: _.variable.isin(external_ls)).dropna()
+    df_internal = melted_df2.where(
+        lambda _: _.variable.isin(internal_ls)).dropna()
     df_land = melted_df2.where(lambda _: _.variable.isin(land_ls)).dropna()
     df_misc = melted_df2.where(
         lambda _: ~_.variable.str.contains("Bsmt|Garage", regex=True)
@@ -572,7 +616,8 @@ def gen_cat_plots(data):
         ggplot(data)
         + aes(x="factor(YrSold)", y="SalePrice_log")
         + geom_boxplot()
-        + labs(x="Year Sold", y="Sale Price (USD) (K)", title="Houses Sold by Year")
+        + labs(x="Year Sold", y="Sale Price (USD) (K)",
+               title="Houses Sold by Year")
         + theme(figure_size=(6.4, 4.8))
     ).draw()
 
@@ -614,7 +659,8 @@ def get_x_y(data):
         "TotRmsAbvGrd",
     ]
     indicator_cols_dirty = set(data.filter(like="_")).difference(set(features))
-    indicator_cols_clean = list(filter(lambda _: "_log" not in _, indicator_cols_dirty))
+    indicator_cols_clean = list(
+        filter(lambda _: "_log" not in _, indicator_cols_dirty))
     X = data[features + indicator_cols_clean]
     y = data["SalePrice_log"]
 
@@ -657,7 +703,8 @@ def fit_RidgeCV(X, y, K=10):
 def calc_vif(X):
     vif = pd.DataFrame()
     vif["variable"] = X.columns
-    vif["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+    vif["VIF"] = [variance_inflation_factor(
+        X.values, i) for i in range(X.shape[1])]
     return vif.sort_values("VIF", ascending=False)
 
 
@@ -672,7 +719,8 @@ def model_summary(model):
     # residuals
     model_df["residuals"] = model.resid
     # normalized residuals
-    model_df["norm_residuals"] = model.get_influence().resid_studentized_internal
+    model_df["norm_residuals"] = model.get_influence(
+    ).resid_studentized_internal
     # absoluate squared normalized residuals
     model_df["abs_sq_norm_residuals"] = model_df["norm_residuals"].apply(
         lambda _: np.sqrt(np.abs(_))
@@ -686,6 +734,73 @@ def model_summary(model):
 
     model_df = model_df.reset_index()
     return model_df
+
+
+def build_estimators(X, impute_missing_val=None):
+
+    cat_cols = X.columns[X.dtypes == "O"]
+    num_cols = X.select_dtypes(include=np.number).columns
+    categories = [X[column].unique() for column in X[cat_cols]]
+
+    categories_clean = []
+    for cat in categories:
+        categories_clean.append(
+            np.array(
+                list(map(lambda _: "MISSING" if _ is np.nan else _, cat)),
+                dtype=cat.dtype,
+            )
+        )
+        # cat[cat == None] = "MISSING"
+    categories = categories_clean
+    cat_proc_nlin = make_pipeline(
+        SimpleImputer(
+            missing_values=impute_missing_val, strategy="constant", fill_value="MISSING"
+        ),
+        OrdinalEncoder(categories=categories),
+    )
+
+    cat_proc_lin = make_pipeline(
+        SimpleImputer(
+            missing_values=impute_missing_val, strategy="constant", fill_value="MISSING"
+        ),
+        OneHotEncoder(categories=categories),
+    )
+
+    num_proc_nlin = make_pipeline(IterativeImputer(random_state=SEED))
+
+    num_proc_lin = make_pipeline(IterativeImputer(
+        random_state=SEED), StandardScaler())
+
+    # transformation to use for non-linear estimators
+    processor_nlin = make_column_transformer(
+        (cat_proc_nlin, cat_cols), (num_proc_nlin,
+                                    num_cols), remainder="passthrough"
+    )
+
+    # transformation to use for linear estimators
+    processor_lin = make_column_transformer(
+        (cat_proc_lin, cat_cols), (num_proc_lin, num_cols), remainder="passthrough"
+    )
+
+    lasso_pipeline = make_pipeline(processor_lin, LassoCV())
+
+    rf_pipeline = make_pipeline(
+        processor_nlin, RandomForestRegressor(random_state=SEED)
+    )
+
+    gradient_pipeline = make_pipeline(
+        processor_nlin, HistGradientBoostingRegressor(random_state=SEED)
+    )
+
+    ridge_pipeline = make_pipeline(processor_lin, RidgeCV())
+
+    estimators = [
+        ("Random Forest", rf_pipeline),
+        ("Lasso", lasso_pipeline),
+        ("Gradient Boosting", gradient_pipeline),
+        ("Ridge", ridge_pipeline),
+    ]
+    return estimators
 
 
 def residual_plots(regression_res):
@@ -758,7 +873,8 @@ def plot_ridge_path(X, y):
 def run(plot_summaries=True):
     # get cleansed dataset all ready to go
     data = get_dataset(
-        os.path.join(os.getcwd(), "kaggle", "ames-housing-prices", "data", "train.csv")
+        os.path.join(os.getcwd(), "kaggle",
+                     "ames-housing-prices", "data", "train.csv")
     )
 
     # generate all summary plots
@@ -782,5 +898,128 @@ def run(plot_summaries=True):
     rr_coefs = {k: v for k, v in zip(X.columns.values, rr_fitted.coef_)}
 
 
+def plot_regression_results(ax, y_true, y_pred, title, scores, elapsed_time):
+    """Scatter plot of the predicted vs true targets."""
+    ax.plot(
+        [y_true.min(), y_true.max()], [y_true.min(), y_true.max()], "--r", linewidth=2
+    )
+    ax.scatter(y_true, y_pred, alpha=0.2)
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.get_xaxis().tick_bottom()
+    ax.get_yaxis().tick_left()
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_position(("outward", 10))
+    ax.set_xlim([y_true.min(), y_true.max()])
+    ax.set_ylim([y_true.min(), y_true.max()])
+    ax.set_xlabel("Measured")
+    ax.set_ylabel("Predicted")
+    extra = plt.Rectangle(
+        (0, 0), 0, 0, fc="w", fill=False, edgecolor="none", linewidth=0
+    )
+    ax.legend([extra], [scores], loc="upper left")
+    title = title + "\n Evaluation in {:.2f} seconds".format(elapsed_time)
+    ax.set_title(title)
+
+
+def get_x_y2():
+    data = get_dataset2(
+        os.path.join(os.getcwd(), "kaggle",
+                     "ames-housing-prices", "data", "train.csv")
+    )
+    y = data["SalePrice_log"]
+    X = data.drop(
+        ["1stFlrSF", "GrLivArea", "LotFrontage",
+            "SalePrice", "SalePrice_log", "Id"],
+        axis=1,
+    )
+
+    # treat YrSold and MoSold as indicator variables to avoid
+    # dealing with autocorrelation
+    time_ind_cols = ["YrSold", "MoSold"]
+
+    X[time_ind_cols] = X[time_ind_cols].astype("str")
+    X[X.select_dtypes(include="int64").columns] = X.select_dtypes(
+        include="int64"
+    ).astype("float")
+    return X, y
+
+
+def get_x_y3():
+
+    from sklearn.datasets import fetch_openml
+
+    df = fetch_openml(name="house_prices", as_frame=True)
+    X = df.data
+    y = df.target
+
+    log_cols = ["1stFlrSF", "GrLivArea", "LotFrontage"]
+    X[log_cols] = X[log_cols].apply(np.log)
+
+    X = X.drop(
+        ["Id"],
+        axis=1,
+    )
+
+    # treat YrSold and MoSold as indicator variables to avoid
+    # dealing with autocorrelation
+    time_ind_cols = ["YrSold", "MoSold"]
+
+    X[time_ind_cols] = X[time_ind_cols].astype("str")
+
+    return X, np.log(y)
+
+
+def run_pipelines():
+
+    X, y = get_x_y2()
+
+    # X, y = shuffle(X, y, random_state=SEED)
+    estimators = build_estimators(X, np.nan)
+
+    fig, axs = plt.subplots(2, 2, figsize=(9, 7))
+    axs = np.ravel(axs)
+
+    try:
+
+        for ax, (name, est) in zip(axs, estimators):
+            start_time = time.time()
+            score = cross_validate(
+                est,
+                X,
+                y,
+                scoring=["r2", "neg_mean_absolute_error"],
+                n_jobs=-1,
+                verbose=logging.DEBUG,
+            )
+            elapsed_time = time.time() - start_time
+
+            log.info("Score: {}".format(score))
+            y_pred = cross_val_predict(est, X, y, n_jobs=-1, verbose=0)
+
+            plot_regression_results(
+                ax,
+                y,
+                y_pred,
+                name,
+                (r"$R^2={:.2f} \pm {:.2f}$" + "\n" + r"$MAE={:.2f} \pm {:.2f}$").format(
+                    np.mean(score["test_r2"]),
+                    np.std(score["test_r2"]),
+                    -np.mean(score["test_neg_mean_absolute_error"]),
+                    np.std(score["test_neg_mean_absolute_error"]),
+                ),
+                elapsed_time,
+            )
+
+        plt.suptitle("Single predictors versus stacked predictors")
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.9)
+        plt.show()
+    except (Exception, ValueError) as e:
+        log.exception(e)
+
+
 if __name__ == "__main__":
-    run(False)
+    # run(False)
+    run_pipelines()
