@@ -1,148 +1,45 @@
 #!/usr/bin/env jupyter-console
-
-import logging
-import os
-import time
-from itertools import islice
-
-import matplotlib.pyplot as plt
-import numpy as np  # linear algebra
-import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
-import statsmodels.api as sm
-from plotnine import *  # plotting
-from sklearn.compose import make_column_transformer
-from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
-from sklearn.impute import IterativeImputer, SimpleImputer
-from sklearn.linear_model import LassoCV, LinearRegression, RidgeCV
-from sklearn.model_selection import KFold, cross_val_predict, cross_validate
-from sklearn.pipeline import make_pipeline
+from sklearn.experimental import enable_iterative_imputer  # noqa
+from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler
-from sklearn.utils import shuffle
-from statsmodels.stats.outliers_influence import variance_inflation_factor
-from sklearn.experimental import enable_iterative_imputer
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import KFold, cross_val_predict, cross_validate
+from sklearn.linear_model import LassoCV, LinearRegression, RidgeCV
+from sklearn.impute import IterativeImputer, SimpleImputer
+from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
+from sklearn.compose import make_column_transformer
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
+import numpy as np  # linear algebra
+import time
+import logging
+import sys
+import os
+
+KAGGLE_PROJ_PATH = os.path.join(os.getcwd(), "kaggle", "ames-housing-prices")
+
+# append path so we can import functions from local modules
+sys.path.append(KAGGLE_PROJ_PATH)
+
+from util import get_logger  # noqa
+from plot import generate_summary_plots, plot_regression_results  # noqa
+
 
 SEED = 12345
-ORD_COND_LS = ["Ex", "Gd", "TA", "Fa", "Po", "NA"]
 
-ORDINAL_VARS = [
-    {"BsmtFullBath": None},
-    {"BedroomAbvGr": None},
-    {"TotRmsAbvGrd": None},
-    {"OverallQual": None},
-    {"OverallCond": None},
-    {"HeatingQC": ORD_COND_LS},
-    {"GarageCond": ORD_COND_LS},
-    {"FireplaceQu": ORD_COND_LS},
-    {"GarageCars": None},
-    {"GarageQual": ORD_COND_LS},
-    {"ExterCond": ORD_COND_LS},
-    {"Fireplaces": None},
-    {"Fence": ["GdPrv", "MnPrv", "GdWo", "MnWw", "NA"]},
-    {"BsmtQual": ORD_COND_LS},
-    {"BsmtCond": ORD_COND_LS},
-    {"KitchenQual": ORD_COND_LS},
-    {"BsmtExposure": ["Gd", "Av", "Mn", "No", "NA"]},
-    {"ExterQual": ORD_COND_LS},
-    {"BsmtFullBath": None},
-    {"FullBath": None},
-    {"KitchenAbvGr": None},
-    {"BsmtHalfBath": None},
-    {"PavedDrive": ["Y", "P", "N"]},
-    {"PoolQC": ORD_COND_LS},
-    {"HalfBath": None},
-    {"GarageFinish": ["Fin", "RFn", "Unf", "NA"]},
-    {"LandSlope": ["Gtl", "Mod", "Sev"]},
-    {"Utilities": ["AllPub", "NoSewr", "NoSeWa", "ELO"]},
-]
-
-CATEGORICAL_VARS = [
-    "Neighborhood",
-    "Exterior1st",
-    "Exterior2nd",
-    "MSSubClass",
-    "SaleType",
-    "Condition1",
-    "Condition2",
-    "RoofMatl",
-    "HouseStyle",
-    "Functional",
-    "BsmtFinType1",
-    "GarageFinish",
-    "GarageType",
-    "Heating",
-    "BsmtFinType2",
-    "SaleCondition",
-    "Foundation",
-    "RoofStyle",
-    "LotConfig",
-    "BldgType",
-    "Electrical",
-    "MSZoning",
-    "LandContour",
-    "MiscFeature",
-    "LotShape",
-    "MasVnrType",
-    "CentralAir",
-    "Alley",
-    "Street",
-]
-
-
-def get_logger(name=None, default_level=logging.INFO):
-    """
-    Build a logger object
-    """
-    logger = logging.getLogger(name)
-    logger.setLevel(default_level)
-    ch = logging.StreamHandler()
-    ch.setLevel(default_level)
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-    return logger
-
-
-def draw_cat_plots(
-    df, title="Categorical", size="regular", y="SalePrice_log", x="value"
-):
-    """
-    Draw plot for categorical data. In this case, it's boxplots. This is mostly used as a utility for keeping plotting code DRY.
-
-    df: pd.DataFrame - A DataFrame to plot. Has the following columns: SalePrice, variable, value
-    title: str       - A phrase to insert into the plot's title.
-    size: str        - The size of the png that should be produced. Useful in cases where we need to control real-estate by plot. options: regular, large.
-    """
-    plt = (
-        ggplot(df)
-        + aes(y=y, x=x)
-        + geom_boxplot()
-        + stat_summary(fun_y=np.mean, geom="point", color="red", fill="red")
-        + facet_wrap("variable", scales="free")
-        + labs(
-            x="",
-            y="Log Sale Price",
-            title="Adjusted Sales Price vs {} Variables".format(title),
-        )
-    )
-    if size == "regular":
-        # adjust x and y axis' so that the scales show up nicely
-        plt += theme(
-            subplots_adjust={"hspace": 0.5, "wspace": 0.25},
-            axis_text_x=element_text(rotation=45),
-            figure_size=(8, 6),
-        )
-    else:
-        plt += theme(
-            subplots_adjust={"hspace": 0.5, "wspace": 0.25},
-            axis_text_x=element_text(rotation=45),
-            figure_size=(13, 10),
-        )
-    plt.draw()
+# Setup logging so we can avoid using print statements all over the place
+global log
+log = get_logger()
 
 
 def apply_cleansing(df):
+    """Apply data cleansing transformations and corrections to a dataframe. This is mostly centralized so data cleansing only happens in one place.
+
+    :param df: pd.DataFrame. A pandas Dataframe representing the ames housing price dataset
+    :returns: pd.DataFrame. A cleaned dataframe.
+
+    """
     # Exterior2nd has mismatching values compared to Exterior1st
     df.Exterior2nd = (
         df.Exterior2nd.replace("Wd Shng", "WdShing")
@@ -153,14 +50,14 @@ def apply_cleansing(df):
 
 
 def apply_imputation(df, cols_to_exclude=[]):
-    """
-    Impute missing values
+    """For columns with missing data, apply imputation techniques to fill in the missing data. Note that this function is not needed when using the sklearn Pipeline API as imputation happens within the pipeline.
+
+    :param df: pd.DataFrame. Data that contains all the columns needed to impute
+    :param cols_to_exclude: list(str). A list of columns that should not be factored into imputation. For example, say that the predictor variable of interest is a part of "df". The imputed values should not take into consideration the predictor variable as it would cause data leakage and pollute the final results.
+    :return df: pd.DataFrame. Dataframe with imputed values.
+
     """
     # store a copy of pre-imputed data just in case additional analysis is needed.
-    # A few variables have been dropped for purposes of imputation
-    # 1. SalePrice. Since this is the dependent variable, don't want to introduce data leakage by having the imputed values based off it.
-    # 2. YrSold, MoSol. These are to be included as factors in the model to avoid dealing with autocorrelation, which would have to be accounted for here if used in as a numeric.
-    # 3. Id. It's an identifier and meaningless in the context of regression.
     data_pre_imp = (
         df.select_dtypes(include=np.number).copy().drop(
             cols_to_exclude, axis=1)
@@ -168,7 +65,7 @@ def apply_imputation(df, cols_to_exclude=[]):
 
     # impute mean using sklearn
     # TODO: check to make sure the imputations make sense afterwards
-    imp_mean = IterativeImputer(random_state=12345)
+    imp_mean = IterativeImputer(random_state=SEED)
     data_trans = imp_mean.fit_transform(data_pre_imp)
 
     imputed_df = pd.DataFrame(data_trans, columns=data_pre_imp.columns)
@@ -179,6 +76,12 @@ def apply_imputation(df, cols_to_exclude=[]):
 
 
 def get_area_cols(df):
+    """Return all of the columns that represent area measurements in the Ames Housing Dataset.
+
+    :param df: pd.DataFrame. Ames Housing Dataset
+    :returns: list(str). List of column names.
+
+    """
     return list(filter(lambda _: any(x in _ for x in ["SF", "Area"]), df.columns)) + [
         "LotFrontage",
         "SalePrice",
@@ -186,6 +89,14 @@ def get_area_cols(df):
 
 
 def filter_suffix(ls, df, suffix="log"):
+    """Filter a list of column names based on a provided suffix.
+
+    :param ls: list(str). List of column names.
+    :param df: pd.DataFrame. Dataframe containing columns that are being compared against.
+    :param suffix: str. Suffix present in the column name that should be filtered for.
+    :returns:
+
+    """
     return list(
         map(lambda _: _ + "_" + suffix if (_ + suffix)
             not in df.columns else _, ls)
@@ -193,6 +104,12 @@ def filter_suffix(ls, df, suffix="log"):
 
 
 def add_indicators(data):
+    """Add indicator variables (using OneHotEncoder) to the Ames Housing Price Dataset. Note that this is done during a step when using the Pipeline API so this is only if building and fitting models without using the Pipeline API.
+
+    :param data: pd.DataFrame. A dataframe representing the Ames Housing Dataset.
+    :returns: pd.DataFrame. The source dataframe with indicator variables joined to it.
+
+    """
     exterior_indicators = (
         # create indicator variables for both "Exterior" columns
         pd.get_dummies(data.Exterior1st, drop_first=True).add(
@@ -251,32 +168,6 @@ def add_indicators(data):
     fireplacequ_indicators = pd.get_dummies(
         data.FireplaceQu, prefix="FireplaceQu", drop_first=True
     )
-    masvnrtype_indicators = pd.get_dummies(
-        data.MasVnrType, prefix="MasVnrType", drop_first=True
-    )
-    heatingqc_indicators = pd.get_dummies(
-        data.HeatingQC, prefix="HeatingQC", drop_first=True
-    )
-    street_indicators = pd.get_dummies(
-        data.Street, prefix="Street", drop_first=True)
-    garagetype_indicators = pd.get_dummies(
-        data.GarageType, prefix="GarageType", drop_first=True
-    )
-    overallqual_indicators = pd.get_dummies(
-        data.OverallQual, prefix="OverallQual", drop_first=True
-    )
-    miscfeature_indicators = pd.get_dummies(
-        data.MiscFeature, prefix="MiscFeature", drop_first=True
-    )
-    housestyle_indicators = pd.get_dummies(
-        data.HouseStyle, prefix="HouseStyle", drop_first=True
-    )
-    mssubclass_indicators = pd.get_dummies(
-        data.MSSubClass, prefix="MSSubClass", drop_first=True
-    )
-    foundation_indicators = pd.get_dummies(
-        data.Foundation, prefix="Foundation", drop_first=True
-    )
 
     df = pd.DataFrame(
         data.join(exterior_indicators)
@@ -308,19 +199,12 @@ def add_indicators(data):
 
 
 def apply_trans(df):
-    # Add Log Transformations to area columns
-    area_cols = get_area_cols(df)
-    area_cols_renamed = filter_suffix(area_cols, df, suffix="log")
-    df[area_cols_renamed] = df[area_cols].apply(np.log)
+    """Apply general transformations to a dataframe containing the Ames Housing Dataset. This is slightly different than apply_cleansing as it is focused less on resolving Data Quality issues and moreso preparing it for modeling.
 
-    # new columns
-    # df["HasExtraGarage"] = (df.MiscFeature == "Gar2").astype("int")
-    df = add_indicators(df)
-    return df
+    :param df: pd.DataFrame. A dataframe containing the Ames Housing Dataset.
+    :returns: pd.DataFrame. The source dataframe with transformations applied.
 
-
-def apply_trans2(df):
-
+    """
     # Replace "NA" categories with "MISSING"
     cat_cols = df.columns[df.dtypes == "O"]
     categories = [df[column].unique() for column in df[cat_cols]]
@@ -335,339 +219,32 @@ def apply_trans2(df):
     return df
 
 
-# Setup logging so we can avoid using print statements all over the place
-global log
-log = get_logger()
+def get_dataset2(path):
+    """Retrieve the Ames Housing dataset, apply data cleansing operations, and transformations to it. This is to avoid having to orchestrate this in the main function.
 
+    :param path: str. A path to a csv that pd.read_csv() can understand.
+    :returns: pd.DataFrame.
 
-# Don't auto interpret NA as NaN. NA has an ordinal ranking with respect to other fields
-# and converting it to NaN obfuscates that
-
-
-def get_dataset(path):
+    """
     data = pd.read_csv(path)
-
-    for _ in ORDINAL_VARS:
-        for k, v in _.items():
-            if v:
-                # use the explicit Order defined for this column
-                data[k] = pd.Categorical(data[k], categories=v, ordered=True)
-            else:
-                # use default ordering. Should be mostly integer columns here. e.g. 1 < 2 < 3 < 4
-                data[k] = pd.Categorical(data[k], ordered=True)
-
-    for _ in CATEGORICAL_VARS:
-        data[_] = pd.Categorical(data[_])
 
     # apply data cleansing operations
     data = apply_cleansing(data)
-
-    # impute missing data
-    data = apply_imputation(
-        data, cols_to_exclude=["SalePrice", "YrSold", "MoSold", "Id"]
-    )
 
     # apply transformations
     data = apply_trans(data)
     return data
 
 
-def get_dataset2(path):
-    data = pd.read_csv(path)
-
-    # apply data cleansing operations
-    data = apply_cleansing(data)
-
-    # apply transformations
-    data = apply_trans2(data)
-    return data
-
-
-def gen_logtrans_plots(data):
-    # Unfortunately, there is not currently a good way to get plotnine plots to show up
-    # side by side. matplotlib can do this but only with their plots.
-    (
-        ggplot(data)
-        + aes(x="SalePrice")
-        + geom_histogram()
-        + labs(x="Sale Price (USD) (K)", y="Count", title="Sale Price")
-        # + theme(figure_size = (6.4, 4.8))
-    ).draw()
-
-    (
-        ggplot(data)
-        + aes(x="SalePrice_log")
-        + geom_histogram()
-        + labs(x="Log Sale Price (USD)", y="Count",
-               title="Adjusted Sale Price")
-        # + theme(figure_size = (6.4, 4.8))
-    ).draw()
-
-    # do histograms of SalePrice for each neighborhood.
-    (
-        ggplot(data)
-        + aes(x="SalePrice_log")
-        + geom_histogram()
-        + facet_wrap("Neighborhood")
-        + labs(
-            x="Log Sale Price (USD)",
-            y="Count",
-            title="Adjusted Sale Price by Neighborhood",
-        )
-        + theme(figure_size=(8, 6))
-    )
-
-    melted_df_raw = (
-        data.select_dtypes(include=np.number)
-        .melt(id_vars=["Id"], var_name="variable", value_name="value")
-        .where(lambda _: ~_.variable.isin(["SalePrice", "SalePrice_log"]))
-        .dropna()
-    )
-
-    cols = iter(list(melted_df_raw.variable.unique()))
-    length_to_split = [12, 12]
-
-    output = [list(islice(cols, elem)) for elem in length_to_split]
-
-    log.debug(output)
-
-    (
-        ggplot(melted_df_raw.where(
-            lambda _: _.variable.isin(output[0])).dropna())
-        + aes(x="value")
-        + geom_histogram()
-        + facet_wrap("variable", scales="free")
-        + theme(
-            subplots_adjust={"hspace": 0.5, "wspace": 0.25},
-            axis_text_x=element_text(rotation=45),
-            figure_size=(13, 10),
-        )
-    ).draw()
-
-    (
-        ggplot(melted_df_raw.where(
-            lambda _: _.variable.isin(output[1])).dropna())
-        + aes(x="value")
-        # had trouble with the binwidth with all of these variables together.
-        # Left this as-is since I was able to figure out what I needed from the graphs.
-        + geom_histogram(binwidth=10)
-        + facet_wrap("variable", scales="free")
-        + theme(
-            subplots_adjust={"hspace": 0.5, "wspace": 0.25},
-            axis_text_x=element_text(rotation=45),
-            figure_size=(13, 10),
-        )
-    ).draw()
-
-    area_cols = get_area_cols(data)
-    area_cols_renamed = filter_suffix(area_cols, data, suffix="log")
-
-    melted_df_log = (
-        data.select_dtypes(include=np.number)
-        .melt(id_vars=["Id"], var_name="variable", value_name="value")
-        .where(lambda _: _.variable.isin(["SalePrice_log"] + area_cols_renamed))
-        .dropna()
-    )
-
-    (
-        # address plotting issues with -infty by replacing with 0
-        ggplot(melted_df_log.replace(-np.infty, 0))
-        + aes(x="value")
-        # had trouble with the binwidth with all of these variables together.
-        # Left this as-is since I was able to figure out what I needed from the graphs.
-        + geom_histogram()
-        + facet_wrap("variable", scales="free")
-        + theme(
-            subplots_adjust={"hspace": 0.5, "wspace": 0.25},
-            axis_text_x=element_text(rotation=45),
-            figure_size=(13, 10),
-        )
-    ).draw()
-
-
-def gen_scatter_plots(data):
-    melted_df = (
-        data.select_dtypes(include=np.number)
-        .melt(id_vars=["Id", "SalePrice_log"], var_name="variable", value_name="value")
-        .dropna()
-    )
-
-    (
-        ggplot(melted_df)
-        + aes(y="SalePrice_log", x="value")
-        + geom_point()
-        + geom_smooth(color="red")
-        + facet_wrap("variable", scales="free")
-        + labs(x="", y="Sale Price (K)",
-               title="Sales Price vs Continuous Variables")
-        +
-        # adjust x and y axis' so that the scales show up nicely
-        # set the figure size to be wider so it takes up the whole screen
-        theme(
-            subplots_adjust={"hspace": 0.55, "wspace": 0.25},
-            axis_text_x=element_text(rotation=45),
-            figure_size=(13, 10),
-        )
-    ).draw()
-
-
-def gen_cat_plots(data):
-
-    # not a great use of a generator. Mainly used to transform list(dict.keys()) -> list(keys) in a single line
-    ord_colnames = list(
-        map(lambda _: next(k for k, v in _.items()), ORDINAL_VARS))
-    names = ord_colnames + CATEGORICAL_VARS + ["Id", "SalePrice_log"]
-
-    amenities_ls = [
-        "CentralAir",
-        "Heating",
-        "HeatingQC",
-        "Electrical",
-        "Fence",
-        "Fireplaces",
-        "FireplaceQu",
-        "PoolQC",
-        "Utilities",
-    ]
-    external_ls = [
-        "HouseStyle",
-        "ExterCond",
-        "ExterQual",
-        "Exterior1st",
-        "Exterior2nd",
-        "Foundation",
-        "RoofMatl",
-        "RoofStyle",
-        "Functional",
-        "PavedDrive",
-        "Alley",
-        "Street",
-        "MasVnrType",
-        "BldgType",
-    ]
-    internal_ls = [
-        "KitchenAbvGr",
-        "KitchenQual",
-        "BedroomAbvGr",
-        "TotRmsAbvGrd",
-        "FullBath",
-        "HalfBath",
-    ]
-    land_ls = [
-        "LandContour",
-        "LandSlope",
-        "LotConfig",
-        "LotShape",
-        "MSZoning",
-        "Condition1",
-        "Condition2",
-    ]
-    misc_ls = ["Neighborhood", "MiscFeature", "MiscVal"]
-    melted_df2 = (
-        data[names]
-        .melt(id_vars=["Id", "SalePrice_log"], var_name="variable", value_name="value")
-        .dropna()
-    )
-
-    df_bsmt = melted_df2.where(
-        lambda _: _.variable.str.contains("Bsmt")).dropna()
-    df_garage = melted_df2.where(
-        lambda _: _.variable.str.contains("Garage")).dropna()
-    df_amenities = melted_df2.where(
-        lambda _: _.variable.isin(amenities_ls)).dropna()
-    df_external = melted_df2.where(
-        lambda _: _.variable.isin(external_ls)).dropna()
-    df_internal = melted_df2.where(
-        lambda _: _.variable.isin(internal_ls)).dropna()
-    df_land = melted_df2.where(lambda _: _.variable.isin(land_ls)).dropna()
-    df_misc = melted_df2.where(
-        lambda _: ~_.variable.str.contains("Bsmt|Garage", regex=True)
-        & ~_.variable.isin(amenities_ls + external_ls + internal_ls + land_ls + misc_ls)
-    ).dropna()
-
-    draw_cat_plots(df_bsmt, "Basement")
-    draw_cat_plots(df_garage, "Garage")
-    draw_cat_plots(df_amenities, "Amenities")
-    draw_cat_plots(df_external, "External", "large")
-    draw_cat_plots(df_internal, "Internal")
-    draw_cat_plots(df_land, "Land")
-
-    draw_cat_plots(df_misc)
-
-    # Misc Feature vs Misc Value.
-    (
-        ggplot(
-            data[["MiscFeature", "MiscVal", "SalePrice"]]
-            .where(lambda _: _.MiscFeature != "NA")
-            .dropna()
-        )
-        + aes(x="MiscFeature", y="MiscVal")
-        + geom_boxplot()
-        + geom_point(color="green")
-        + labs(
-            x="Feature",
-            y="Feature Value (USD)",
-            title="Estimated Value of Extra Property Features",
-        )
-        + theme(figure_size=(6.4, 4.8))
-    ).draw()
-
-    (
-        ggplot(data)
-        + aes(x="factor(YrSold)", y="SalePrice_log")
-        + geom_boxplot()
-        + labs(x="Year Sold", y="Sale Price (USD) (K)",
-               title="Houses Sold by Year")
-        + theme(figure_size=(6.4, 4.8))
-    ).draw()
-
-
-def generate_summary_plots(data):
-    gen_logtrans_plots(data)
-    gen_scatter_plots(data)
-    gen_cat_plots(data)
-
-
-def get_top_zeroes(data):
-    df = data.select_dtypes(include=np.number)
-    top_zeroes = (
-        # gets the 0-percentage for each column of a dataframe
-        ((df == 0).sum() / len(df))
-        .sort_values(ascending=False)
-        .where(lambda _: _ > 0.10)
-        .dropna()
-    )
-    return top_zeroes
-
-
-def get_x_y(data):
-    features = [
-        "1stFlrSF_log",
-        "2ndFlrSF",
-        "TotalBsmtSF",
-        "GarageArea",
-        "GrLivArea_log",
-        "LotArea_log",
-        "LotFrontage_log",
-        "MasVnrArea",
-        "WoodDeckSF",
-        "BsmtFinSF1",
-        "BsmtUnfSF",
-        "EnclosedPorch",
-        "ScreenPorch",
-        "FullBath",
-        "TotRmsAbvGrd",
-    ]
-    indicator_cols_dirty = set(data.filter(like="_")).difference(set(features))
-    indicator_cols_clean = list(
-        filter(lambda _: "_log" not in _, indicator_cols_dirty))
-    X = data[features + indicator_cols_clean]
-    y = data["SalePrice_log"]
-
-    return X, y
-
-
 def fit_OLS(X, y, K=10):
+    """Fit an OLS model using KFold cross validation. This was a first attempt. After playing with doing more model types, the Pipeline API was much nicer to use. This is being kept around for future reference though.
+
+    :param X: pd.DataFrame. Dataframe containing feature variables.
+    :param y: pd.Series. Series containing the target variable.
+    :param K: int. number of folds to use for Cross Validation.
+    :returns: list(float). K-length list of R^2 statistics.
+
+    """
     model = LinearRegression()
     scores = []
     kfold = KFold(n_splits=K, shuffle=True, random_state=12345)
@@ -681,6 +258,12 @@ def fit_OLS(X, y, K=10):
 
 
 def fit_OLS_statsmodels(X, y):
+    """Fit an OLS model using the statsmodels which is closer to traditional statistics.
+    :param X: pd.DataFrame. Dataframe containing feature variables.
+    :param y: pd.Series. Series containing the target variable.
+    :returns: statsmodels.regression.linear_model.RegressionResults.
+
+    """
     # Fit the regression model
     sm_model = sm.OLS(y, X)
     sm_ols = sm_model.fit()
@@ -688,9 +271,18 @@ def fit_OLS_statsmodels(X, y):
 
 
 def fit_RidgeCV(X, y, K=10):
-    #    alphas = np.logspace(-10, -2, n_alphas)
+    """Fit a Ridge Regression Model with scikit learn. X is standardized beforehand since Ridge Regression works best when coefficients are similar sized.
+
+    Ridge Regression (with CV) was employed for the Ames Housing Price Dataset because the initial chosen variables have a high degree of multicollinearity (verified by investigating VIF). In this case, Ridge Regresssion can help resolve multicollinearity by penalizing coefficients that contain redundant information.
+    :param X: pd.DataFrame. Dataframe containing feature variables.
+    :param y: pd.Series. Series containing the target variable.
+    :param K: int. number of folds to use for Cross Validation.
+    :returns: (RidgeCV, list(float)). Fitted Ridge Regression Model and a K-length list of R^2 statistics.
+
+    """
     n_alphas = 200
     alphas = np.logspace(-10, 6, n_alphas)
+
     # standardize features for Ridge Regression
     scaler = StandardScaler()
     X_trans = scaler.fit_transform(X)
@@ -699,18 +291,16 @@ def fit_RidgeCV(X, y, K=10):
     score = rr.score(X_trans, y)
     return rr, score
 
-
-def calc_vif(X):
-    vif = pd.DataFrame()
-    vif["variable"] = X.columns
-    vif["VIF"] = [variance_inflation_factor(
-        X.values, i) for i in range(X.shape[1])]
-    return vif.sort_values("VIF", ascending=False)
+    """
+    """
 
 
 def model_summary(model):
-    """
-    Return a DataFrame containing model summary statistics.
+    """Return a DataFrame containing model summary statistics.
+
+    :param model: sm.regression.linear_model.RegressionResults
+    :returns: pd.DataFrame. Dataframe containing summary statistics of the model.
+
     """
     model_df = pd.DataFrame()
 
@@ -737,7 +327,13 @@ def model_summary(model):
 
 
 def build_estimators(X, impute_missing_val=None):
+    """Using the Pipeline API in sci-kit learn, build pipelines and associate them with estimators. Much of this code is source from https://scikit-learn.org/stable/auto_examples/ensemble/plot_stack_predictors.html#sphx-glr-auto-examples-ensemble-plot-stack-predictors-py, which was extremely helpful and relevant to this Dataset. Some modifications have been made based on analysis I did.
 
+    :param X: pd.DataFrame. Dataframe containing feature variables.
+    :param impute_missing_val: The value to use to indicate that a variable is missing. This is used during the imputation transformer in the pieplines.
+    :returns: list((str, sklearn.pipeline.Pipeline)). Sklearn Pipelines that can be executed.
+
+    """
     cat_cols = X.columns[X.dtypes == "O"]
     num_cols = X.select_dtypes(include=np.number).columns
     categories = [X[column].unique() for column in X[cat_cols]]
@@ -803,74 +399,108 @@ def build_estimators(X, impute_missing_val=None):
     return estimators
 
 
-def residual_plots(regression_res):
+def get_x_y(data):
+    """Return the features (X) and target (y) for Ames Housing Dataset.
+
+    These values were chosen initially by investigating univariate comparisons with boxplots and scatter plots between features and Log Saleprice. Log transformed features are used in cases where a log transformation turned a right-skewed distribution into a normal distribution.
+
+    :param data: pd.DataFrame. Dataframe containing the Ames Housing Dataset.
+    :returns: (pd.DataFrame, pd.Series). The features and target variable
+
     """
-    Generate the following residual plots:
-    1. Fitted vs Residuals
+    features = [
+        "1stFlrSF_log",
+        "2ndFlrSF",
+        "TotalBsmtSF",
+        "GarageArea",
+        "GrLivArea_log",
+        "LotArea_log",
+        "LotFrontage_log",
+        "MasVnrArea",
+        "WoodDeckSF",
+        "BsmtFinSF1",
+        "BsmtUnfSF",
+        "EnclosedPorch",
+        "ScreenPorch",
+        "FullBath",
+        "TotRmsAbvGrd",
+    ]
+    indicator_cols_dirty = set(data.filter(like="_")).difference(set(features))
+    indicator_cols_clean = list(
+        filter(lambda _: "_log" not in _, indicator_cols_dirty))
+    X = data[features + indicator_cols_clean]
+    y = data["SalePrice_log"]
 
-    :regression_rs: statsmodels.regression.linear_model.RegressionResults - A fitted model using the statsmodels library
+    return X, y
+
+
+def get_x_y2():
+    """Return the features (X) and target (y) for Ames Housing Dataset.
+
+    This version does not pre-select variables (unlike get_x_y()). This is because I learned that it is best practice to do variable selection within the confines of Cross-Validation (rather than before hand). This was evident in some of the R^2 statistics returned previously as there were several that were fine but a few that were much lower. Elements of Statistical Learning has a great, concise explanation of why it is not best practice to filter variables outside of Cross Valdation. I refer you to that text (https://web.stanford.edu/~hastie/ElemStatLearn/) for more detail.
+
+    :returns: (pd.DataFrame, pd.Series). The features and target variable
+
     """
 
-    model_df = model_summary(regression_res)
-    # determine outliers. This is not the best way to do it but it's clear from the residuals that
-    # the outliers in this case match this logic.
-    model_df["index_label"] = model_df.where(lambda _: abs(_.residuals) > 1)[
-        "index"
-    ].replace(np.nan, "")
-    (
-        ggplot(model_df)
-        + aes(x="fitted", y="residuals")
-        + geom_smooth(color="red", method="loess")
-        + geom_hline(yintercept=0, linetype="dotted")
-        + geom_point()
-        # highlight outliers with text labels
-        + geom_text(
-            aes(label="index_label", size=10), show_legend=False, ha="left", va="top"
-        )
-        + labs(x="Fitted Values", y="Residuals", title="Fitted vs. Residuals")
-    ).draw()
+    data = get_dataset2(os.path.join(KAGGLE_PROJ_PATH, "data", "train.csv"))
+    y = data["SalePrice_log"]
+    X = data.drop(
+        ["1stFlrSF", "GrLivArea", "LotFrontage",
+            "SalePrice", "SalePrice_log", "Id"],
+        axis=1,
+    )
+
+    # treat YrSold and MoSold as indicator variables to avoid
+    # dealing with autocorrelation
+    time_ind_cols = ["YrSold", "MoSold"]
+
+    X[time_ind_cols] = X[time_ind_cols].astype("str")
+    X[X.select_dtypes(include="int64").columns] = X.select_dtypes(
+        include="int64"
+    ).astype("float")
+    return X, y
 
 
-def plot_ridge_path(X, y):
+def get_x_y3():
+    """Return the features (X) and target (y) for Ames Housing Dataset.
+
+    This version does not pre-select variables (unlike get_x_y()) and it uses a version of the dataset from OpenML. The example I was looking at it used to so I thought I'd keep it in here for future reference.
+
+    :returns: (pd.DataFrame, pd.Series). The features and target variable
+
     """
-    Taken from https://scikit-learn.org/stable/auto_examples/linear_model/plot_ridge_path.html
-    """
-    import matplotlib.pyplot as plt
-    from sklearn import linear_model
-    from matplotlib.pyplot import figure
 
-    figure(num=None, figsize=(8, 6), dpi=80, facecolor="w", edgecolor="k")
-    # #############################################################################
-    # Compute paths
+    from sklearn.datasets import fetch_openml
 
-    n_alphas = 200
-    alphas = np.logspace(-10, 6, n_alphas)
-    # alphas = np.logspace(6, -3, n_alphas)
-    scaler = StandardScaler()
-    X_trans = scaler.fit_transform(X)
+    df = fetch_openml(name="house_prices", as_frame=True)
+    X = df.data
+    y = df.target
 
-    coefs = []
-    for a in alphas:
-        ridge = linear_model.Ridge(alpha=a)
-        ridge.fit(X_trans, y)
-        coefs.append(ridge.coef_)
+    log_cols = ["1stFlrSF", "GrLivArea", "LotFrontage"]
+    X[log_cols] = X[log_cols].apply(np.log)
 
-    # #############################################################################
-    # Display results
+    X = X.drop(
+        ["Id"],
+        axis=1,
+    )
 
-    ax = plt.gca()
+    # treat YrSold and MoSold as indicator variables to avoid
+    # dealing with autocorrelation
+    time_ind_cols = ["YrSold", "MoSold"]
 
-    ax.plot(alphas, coefs)
-    ax.set_xscale("log")
-    ax.set_xlim(ax.get_xlim()[::-1])  # reverse axis
-    plt.xlabel("alpha")
-    plt.ylabel("weights")
-    plt.title("Ridge coefficients as a function of the regularization")
-    plt.axis("tight")
-    plt.show()
+    X[time_ind_cols] = X[time_ind_cols].astype("str")
+
+    return X, np.log(y)
 
 
 def run(plot_summaries=True):
+    """Initial entrypoint function to kick run all the models. Kept for posterity and future use.
+
+    :param plot_summaries: bool. Generate summary plots.
+    :returns:
+
+    """
     # get cleansed dataset all ready to go
     data = get_dataset(
         os.path.join(os.getcwd(), "kaggle",
@@ -896,86 +526,17 @@ def run(plot_summaries=True):
 
     # pair coefficients back with column names
     rr_coefs = {k: v for k, v in zip(X.columns.values, rr_fitted.coef_)}
-
-
-def plot_regression_results(ax, y_true, y_pred, title, scores, elapsed_time):
-    """Scatter plot of the predicted vs true targets."""
-    ax.plot(
-        [y_true.min(), y_true.max()], [y_true.min(), y_true.max()], "--r", linewidth=2
-    )
-    ax.scatter(y_true, y_pred, alpha=0.2)
-
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.get_xaxis().tick_bottom()
-    ax.get_yaxis().tick_left()
-    ax.spines["left"].set_position(("outward", 10))
-    ax.spines["bottom"].set_position(("outward", 10))
-    ax.set_xlim([y_true.min(), y_true.max()])
-    ax.set_ylim([y_true.min(), y_true.max()])
-    ax.set_xlabel("Measured")
-    ax.set_ylabel("Predicted")
-    extra = plt.Rectangle(
-        (0, 0), 0, 0, fc="w", fill=False, edgecolor="none", linewidth=0
-    )
-    ax.legend([extra], [scores], loc="upper left")
-    title = title + "\n Evaluation in {:.2f} seconds".format(elapsed_time)
-    ax.set_title(title)
-
-
-def get_x_y2():
-    data = get_dataset2(
-        os.path.join(os.getcwd(), "kaggle",
-                     "ames-housing-prices", "data", "train.csv")
-    )
-    y = data["SalePrice_log"]
-    X = data.drop(
-        ["1stFlrSF", "GrLivArea", "LotFrontage",
-            "SalePrice", "SalePrice_log", "Id"],
-        axis=1,
-    )
-
-    # treat YrSold and MoSold as indicator variables to avoid
-    # dealing with autocorrelation
-    time_ind_cols = ["YrSold", "MoSold"]
-
-    X[time_ind_cols] = X[time_ind_cols].astype("str")
-    X[X.select_dtypes(include="int64").columns] = X.select_dtypes(
-        include="int64"
-    ).astype("float")
-    return X, y
-
-
-def get_x_y3():
-
-    from sklearn.datasets import fetch_openml
-
-    df = fetch_openml(name="house_prices", as_frame=True)
-    X = df.data
-    y = df.target
-
-    log_cols = ["1stFlrSF", "GrLivArea", "LotFrontage"]
-    X[log_cols] = X[log_cols].apply(np.log)
-
-    X = X.drop(
-        ["Id"],
-        axis=1,
-    )
-
-    # treat YrSold and MoSold as indicator variables to avoid
-    # dealing with autocorrelation
-    time_ind_cols = ["YrSold", "MoSold"]
-
-    X[time_ind_cols] = X[time_ind_cols].astype("str")
-
-    return X, np.log(y)
+    log.info(rr_coefs)
 
 
 def run_pipelines():
+    """Second iteration of the entrypoint function. This builds and executes pipelines using the Pipeline APIs.
 
+    :returns:
+
+    """
     X, y = get_x_y2()
 
-    # X, y = shuffle(X, y, random_state=SEED)
     estimators = build_estimators(X, np.nan)
 
     fig, axs = plt.subplots(2, 2, figsize=(9, 7))

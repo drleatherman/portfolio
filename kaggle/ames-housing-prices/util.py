@@ -1,85 +1,61 @@
 """
-This is a utility module that contains functions and snippets I've written
-that I have found helpful for various analysis. I have a similar store of functions
-and analysis for R but none for python yet.
+A utility module for functions used in the analysis of the Ames Housing Dataset.
 """
-import logging
+
+
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 import pandas as pd
-import numpy as np
+import logging
 
 
-def get_top_corr_vars(df, n=5):
+def calc_vif(X):
+    """Calculate Variance Inflation Factor for a given dataframe to detect multicollinearity between features. This is needed for regression models when there's a need to maintain interpretability of the resulting model (which should be pretty much always).
+
+
+    :param X: pd.DataFrame.
+    :returns: pd.DataFrame. "X" sorted by largest VIF first.
+
     """
-    Get the top n correlated columns for each column.
+    vif = pd.DataFrame()
+    vif["variable"] = X.columns
+    vif["VIF"] = [variance_inflation_factor(
+        X.values, i) for i in range(X.shape[1])]
+    return vif.sort_values("VIF", ascending=False)
 
-    df: pd.DataFrame - Source Dataframe
-    n:  int          - number of largest elements to return
+
+def get_top_zeroes(data, threshold=0.10):
+    """For a given dataframe, return a Series containing the percentage of values that are 0 for each column. This is useful for exploratory data analysis.
+
+    :param data: pd.DataFrame.
+    :returns: pd.Series.
+
     """
-    corr_dict = dict()
-    df_tmp = df.copy()
-    for col in df_tmp:
-        # get most highly correlated variables
-        # TODO: Find a more concise way to accomplish this.
-        df_tmp_filt = df_tmp[col].where(lambda _: abs(_) != 1).dropna()
-
-        df_corr = pd.DataFrame({"col_corr": df_tmp_filt})
-        df_corr["corr_abs"] = df_tmp[col].abs()
-        corr_dict[col] = df_corr.nlargest(n, columns="corr_abs").col_corr
-    return corr_dict
-
-
-def get_cols_to_center(corr_dict, threshold=0.7):
-    """
-    Return columns that should be centered.
-    corr_dict: dict   - <K, V> where K = column name and V = pd.Series where the values are correlation coefficients.
-    threshold: float  - the correlation coefficient at which the correlation is considered significant.
-    """
-    cols_to_center = set()
-    for k in corr_dict.keys():
-        # strange that the pandas.Series.__str__ doesn't autoprint the string version when concatenating with other strings.
-        # ====== Column Name ======
-        # <pandas.Series>
-        log.debug("\n ====== " + k + " ====== \n" + str(corr_dict[k]) + "\n")
-        # row names are the column names we want
-        s = set(corr_dict[k].where(lambda _: abs(_) >= threshold).dropna().index.values)
-
-        log.debug("Adding values to set: {}".format(s))
-        cols_to_center = cols_to_center.union(s)
-    return cols_to_center
-
-
-def center_columns(data, cols_to_center=None):
-    """
-    Center columns based on correlation coefficients.
-    data: pd.DataFrame - Source pandas DataFrame
-
-    TODO: Make this more generic.
-    """
-    df_corr = pd.DataFrame()
-    cols = list(data.select_dtypes(include=np.number).columns)
-    cols.remove("Id")
-
-    # prevent creation of duplicate columns. e.g. TotalBsmtSF_log_center_center
-    cols = list(
-        filter(
-            lambda c: all(c2 not in [c + "_log", c + "_center"] for c2 in cols), cols
-        )
+    df = data.select_dtypes(include=np.number)
+    top_zeroes = (
+        # gets the 0-percentage for each column of a dataframe
+        ((df == 0).sum() / len(df))
+        .where(lambda _: _ > threshold)
+        .dropna()
+        .sort_values(ascending=False)
     )
-    log.info("Final Log Columns: {}".format(cols))
+    return top_zeroes
 
-    df_corr = data[cols].corr()
 
-    if cols_to_center is None:
-        corr_dict = get_top_corr_vars(df_corr)
-        cols_to_center = get_cols_to_center(corr_dict)
+def get_logger(name=None, default_level=logging.INFO):
+    """
+    Create a Logger object to use instead of relying on print statements.
 
-        # don't center columns that have already been centered.
-        # At that point, centering is not the answer
-        cols_to_center = list(
-            filter(lambda _: not _.endswith("_center"), cols_to_center)
-        )
-    log.info("Centering columns: {}".format(cols_to_center))
-
-    for col in cols_to_center:
-        data[col + "_center"] = data[col] - data[col].mean()
-    return data
+    :param name: str name of logger. If None, then root logger is used.
+    :param default_level: Log Level
+    :return logger: A Configured logger object
+    """
+    logger = logging.getLogger(name)
+    logger.setLevel(default_level)
+    ch = logging.StreamHandler()
+    ch.setLevel(default_level)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    return logger
