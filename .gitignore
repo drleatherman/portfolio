@@ -2,3 +2,4 @@
 *.tex
 **/.auctex-auto
 *.html
+**/__pycache__
