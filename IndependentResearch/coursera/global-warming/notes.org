@@ -1,0 +1,85 @@
+#+title:     Global Warming 1: The Science and Modeling of Cliamte
+#+author:    Dustin
+#+email:     rahlord1391@gmail.com
+
+* Week 2
+
+** Units of Energy
+
+1 calorie $\to$ 1g $H_2O \times 1^{\circ} C$
+"dietary" calorie = 1 kcal $\times$ 1000 cal
+1 calorie = 4.18 Joules
+
+
+*Watt*: Rate of energy flow. $\frac{Joules}{Sec}$
+
+** Heat
+
+Expression of the amount of kinetic energy a substance has
+
+Energy of motion of atoms.
+
+Each "mode" of motion carries, on average,
+
+$energy = \frac{1}{2} kT$
+
+k: Botlzmann constant
+T: temparature (in Kelvin)
+
+Single atom, 3 dim of space $\to \frac{3}{2} kT$ (one for each dim of space)
+
+2 atoms ($\frac{6}{2}$):
+- 1 vibrational mode (+1)
+- 2 rotation modes (+2)
+
+*Thermal Windows*
+
+Best: Vacuum in the middle of two panes of glass. No vibrating atoms able to reach the inner pane.
+OK: Argonne in the middle of two panes of glass. Atom of Argonne can only carry a small amount of energy so heat loss is not as prevalant.
+not good: Oxygen in the middle of two panes of glass. Oxygen can carry the most energy so it is the worst insulator.
+
+#+begin_quote
+Coal is 30% efficient at creating energy
+#+end_quote
+
+** Units of Light
+
+Wavelength: distance between peaks. Denoted by $\lambda$. Unit is $\frac{cm}{cycle} = "cm"$
+
+$\frac{cycles}{sec}$ = Frequency. Denoted by $\nu$. Unit is $\frac{cycles}{sec} = "sec^{-1}$
+
+Wavenumber: Number of peaks in 1 cm. Denoted by $n$. Unit is $\frac{cycles}{cm} = "cm^{-1}"$
+
+** Light
+
+Light is a mechanism  by which energy can be transferred through a vacuum.
+
+Composed of two properties of spacetime:
+1. Electric Field
+Positive and Negative charges are pulled together through the vacuum
+2. Magnetic Field
+N/S. No monopoles (e.g. a magnet with only a north and south pole). Further reach than Electric Field.
+
+
+Changing electric field will induce a magnetic field (e.g. electromagnetic motor)
+Changing Magnetic field will generate electricity. (e.g. how a generator works)
+
+When electric field changes most, then Magnetic field is at its strongest. And vice-versa.
+
+** Blackbody Radiation
+
+Electromagnetic Radiation or light exchanges energy with objects through the electric field. There is an oscillator which is moving at the same frequency as the light coming through which causes it to heat up.
+
+If $\nu_{light} \approx \nu_{vibration}$, energy can be absorbed
+
+Spectrum - brightness in different "colors"
+
+Higher temperatures -> shorter $\lambda$ (peaks). Invisible -> red hot -> white hot
+
+Total Energy $\frac{W}{m^2} = \epsilon \sigma T^4$
+
+$\epsilon \in (0,1)$: 1 if black. 
+$\sigma$: Stefan Boltzmann const.
+$T$: Temperature (Kelvins)
+
+If an object is a "black body", it contains all the "notes". Called "black body" because if its complete, it makes a smooth black curve (on a blackboard)
