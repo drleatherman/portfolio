@@ -84,6 +84,80 @@ $\gamma$: no information error rate. The error rate if inputs and class labels a
 
 $\hat \gamma = \frac{1}{N^2} \sum_{i = 1}^{W} \sum_{i' = 1}^{N} L(y_i, \hat f(x_{i'}))$
 
+* Bayes Error Rate
+
+Irreducible error ($\epsilon$)
+
+$$
+1 - E \left [ \underset{j}{max} \ P(Y = j | X ) \right ]
+$$
+
+aka 1 - the expected value of the class with the highest probability
+
+* Partial Dependence Plots
+
+p353.
+
+Shows marginal effect one or two features have on predicted outcomes. Always linear in a linear regression model. Can be used to diagnose potential interaction variables.
+
+* Trees
+
+Trees lump observations $y_i$ into m terminal nodes which represent a region, $R_m$. The ideal tree best predicts $\hat y_i$ based on predictors, $X$. Most tree building algorithms are greedy, in that they iterate over all the data. The gist is to determine the *best split points (s)* on predictors j.
+
+Let $R_1, ..., R_M$ be M regions of the data, and $C_m$ model the response as a constant for each $R_m$
+
+$$
+f(x) = \sum_{m = 1}^{M} C_m \ I(x \in R_m)
+$$
+
+Using Least Squares minimization $\left [ \Sigma (y_i - f(x_i))^2 \right ]$, the best $\hat C_m = ave(y_i | x_i \in R_m)$
+
+The best partition is found by solving:
+
+$$
+\underset{j, s}{min} \left [ \underset{c_1}{min} \sum_{x_i \in R_1 (j, s)} (y_i - c_1)^2 \right + \underset{c_2}{min} \sum_{x_i \in R_2 (j, s)} (y_i - c_2)^2]
+$$
+
+Assuming a binary tree. Thus,
+
+\begin{equation}
+\begin{split}
+\hat c_1 = ave(y_i | x_i \in R_1 (j, s))\\
+\hat c_2 = ave(y_i | x_i \in R_2 (j, s))\\
+\end{split}
+\end{equation}
+
+This process is repeated for each $R_m$ until a stopping point is reached.
+
+In determining how large to grow the tree, the best practice is to grow a large tree then prune it using *cost-complexity pruning*.
+
+Let,
+
+$T_0$: Large Tree
+
+$T \subset T_0$: T is a subset of $T_0$
+
+$|T|$: number of terminal nodes. i.e. $R_m$
+
+$N_m$: $\#\{ x_i \in R_m \}$
+
+$\hat C_m = \frac{1}{N_m} \sum_{x_i \in R_m} y_i$
+$Q_m (T) = \frac{1}{N_m} \sum_{x_i \in R_m} (y_i - \hat c_m)^2$
+
+Then *cost-complexity criterion*
+
+$$
+C_{\alpha} (T) = \sum_{m = 1}^{|T|} N_m Q_m (T) + \alpha |T|, \ \alpha \geq 0
+$$
+
+*Goal*: For each $\alpha$, find $T_{\alpha} \subseteq T_0$ that minimizes $C_{\alpha} (T)$
+
+$\alpha$: governs trade-off between tree size and goodness-of-fit to the data.
+
+Large $\alpha$ means smaller trees $T_{\alpha}$
+
+The smallest subtree, $T_{\alpha}$, is chosen by *weakest-link pruning*. Collapse nodes that yield smallest increase to $\Sigma_m N_m Q_m (T)$ until you have single node trees. Final tree is $T_{\hat \alpha}$. Find best $\alpha$ using CV.
+
 * Boosting
 
 Additive Boosting is a technique that weights observations according to how accurate they are. 
@@ -138,3 +212,136 @@ $$
    $$
    G(x) = sign \left ( \sum_{m = 1}^{M} \alpha_m G_m (x) \right )
    $$
+
+** Forward Stage-wise Additive Modeling
+
+Approximates above by adding new basis functions without modifying old ones. For each m, the optimal basis function $b(X, \gamma_m)$ and coefficient $\beta_m$ is solved for and added to the existing model.
+
+See p342.
+
+
+*** Algorithm
+
+1. Initialize $f_0(x) = 0$
+2. For m = 1 to M:
+   a. Compute
+    $$
+    (\beta_m, \gamma_m) = \underset{\beta, \gamma}{arg \ min} \sum_{i = 1}^{N} L \left ( y_i, f_{m - 1} (x_i) + \beta \ b(x_i; \gamma) \right )
+    $$
+   b. Set
+      $$
+      f_m (x) = f_{m - 1} (x + \beta_m \ b(x; \gamma_m))
+      $$
+
+The additive expansion of AdaBoost estimates one-half of the log-odds $P(Y = 1 | X)$. Which is why the sign can be used.
+
+
+** Loss Functions
+
+*** Classification
+
+**** Exponentional
+
+$$
+L(y_i, f(x)) = exp (-y f(x))
+$$
+
+- Monotone decreasing function of the margin: $y f(x)$
+- Concentrates influence on large negative margins
+  - Margins are to residuals as classification is to regression.
+The goal is to produce positive margins as frequently as possible. Penalize negative margins heavily.
+
+**** Binomial Deviance
+
+$$
+L(y, f(x)) = log \left ( 1 + exp(- 2 y f(x)) \right )
+$$
+
+- more even influence across negative and positive margins. Thus more robust in noisy settings where *Bayes Error Rate* is not close to 0. In these cases, AdaBoost degrades.
+
+*** Squared-Error Loss
+
+$$
+L(y, f(x)) = (y - f(x))^2
+$$
+
+Minimizer: $2 \cdot P(Y = 1 | x) - 1$
+
+Not good for classification because for margins $y f(x) > 1$, Loss increases quadraticly placing influence correctly on classified items rather than unclassified items.
+
+*** Huberized Square Loss
+
+- Combines properties of Binomial Deviance, quadratic, and SVM Hinge Loss.
+- Useful alternative to Binomial Deviance to computation purposes
+
+*** K-Class Multinomial Deviance Loss
+
+$$
+L(y, f(x)) = - \sum_{k = 1}^{K} I(y = G_k) f_k (x) + log \left ( \sum_{l = 1}^{K} exp( f_l(x)) \right )
+$$
+
+Like Binomial Deviance but for multiple classes.
+
+** Regression
+
+*** Squared Error Loss
+
+$$
+L(y, f(x)) = (y - f(x))^2
+$$
+
+$f(x) = E(Y | x)$ is the minimizer for the population; however, emphasis is placed on observations with large absolute residuals: $|y_i - f(x_i)|$ during fitting.
+
+Less robust for long-tailed error distributions and to outliers.
+
+*** Absolute Error Loss
+
+$$
+L(y, f(x)) = |y - f(x)|
+$$
+
+More robust than squared error loss for long-tailed distributions and outliers.
+
+*** Huber Loss
+
+$$
+L(y, f(x)) =\begin{cases}
+[y - f(x)]^2, & |y - f(x)| \leq \delta\\
+2 \delta |y - f(x)| - \delta^2, & \text{else}
+\end{cases} 
+$$
+
+Robust to outliers and heavy-tailed error distributions.
+
+** Boosting Trees
+
+Trees partition all joint-predictor values into J regions such that
+
+$$
+f(X) = \gamma_j
+$$
+
+where $\gamma_j$ is a constant for the jth predictor region and $x \in R_j$ where $R_j$ is the jth predictor region. A tree can be represented as
+
+$$
+T(x; \Theta) = \sum_{1}^{J} \gamma_i I(x \in R_j)
+$$
+
+where $\Theta = \{ T_j, \gamma_j \}_1^J$
+
+Minimizer for $\Theta$: $\hat \Theta =  \underset{\Theta}{arg \ min} \sum_{j = 1}^{J} L(y_i, \gamma_j)$
+
+**** Steps
+
+1. Find $R_j$
+   - Difficult to do so approximates are found
+   - Greedy, top-down algorithms to find splits.
+   - Sometimes the following must be used
+    $$
+    \tilde \Theta = \underset{\Theta}{arg \ min} \sum_{1}^{N} \tilde L(y_i, T(x_i; \Theta))
+    $$
+
+    Then given $\hat R_j = \tilde R_j$, $\gamma_j$ can be estimated more precisely.
+2. Find $\gamma_j$ given $R_j$
+   Typically $\hat \gamma_j = \bar y_j$ unless approximate above is used.
+
