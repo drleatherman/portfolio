@@ -345,3 +345,48 @@ Minimizer for $\Theta$: $\hat \Theta =  \underset{\Theta}{arg \ min} \sum_{j = 1
 2. Find $\gamma_j$ given $R_j$
    Typically $\hat \gamma_j = \bar y_j$ unless approximate above is used.
 
+** Interpreting Linear Combinations of Trees
+*** Relative Importance
+
+Customary to assign largest value to 100 then scale below that for others. For K-class classification, K trees are produced and can be averaged to obtain relvance of a predictor across classes.
+
+**** Single Tree
+
+$$
+I_l^2 (T) = \sum_{t = 1}^{J - 1} \hat i_t^2 I(v(t) == l)
+$$
+
+J - 1: sum of internal nodes of the tree
+
+Measure of relevance for each predictor $X_l$. A separate constant is fit for each of the 2-partitions per internal node. The variable chosen is the one that gives the best improvement to $\hat i_t^2$ (squared error risk) for the constant fit to the chosen region.
+
+**** Multiple Trees
+
+$$
+I_l^2 = \frac{1}{M} \sum_{m = 1}^{M} I_l^2 (T_m)
+$$
+
+- More reliable than a single tree because averaging effect.
+- Masking of correlated variables much less of a problem due to shrinkage.
+
+
+*** Partial Dependence Plots
+
+Let $X^T = (X_1, X_2, ..., X_p)$ with indices $S \subset \{ 1, 2, ..., p\}$.
+
+Let $C$ be a complement set, thus $S \cup C = \{ 1, 2, ..., p\}$. Thus, $f(X) = f(X_S., X_C)$
+
+Marginal average of f on $X_S$: $f_S (X_S) = E_{X_C} f(X_S, X_C)$.
+
+This can be computed efficiently from a tree.
+*** Validation Statistics
+- $R^2$
+- Average (Mean) Absolute Error (AAE/MAE)
+
+  $$
+  E|y - \hat f_M(X)|
+  $$
+- Mean Deviance
+    $$
+    \frac{1}{N} \sum_{1}^{N} |y_i - \bar y|
+    $$
