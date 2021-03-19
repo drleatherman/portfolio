@@ -158,6 +158,43 @@ Large $\alpha$ means smaller trees $T_{\alpha}$
 
 The smallest subtree, $T_{\alpha}$, is chosen by *weakest-link pruning*. Collapse nodes that yield smallest increase to $\Sigma_m N_m Q_m (T)$ until you have single node trees. Final tree is $T_{\hat \alpha}$. Find best $\alpha$ using CV.
 
+** Classification
+
+$Q_m (T)$ represents impurity in a node. Cannot use Least Squares as in regression trees.
+
+Differentiable functions are better from an optimization perspective. They are often used for /growing/ trees.
+
+*** $Q_m (T)$
+
+**** Misclassification Error
+
+$$
+\frac{1}{N_m} \sum_{i \in R_m} I(y \neq K(m)) = 1 - \hat p_{mk} (m)
+$$
+
+This should be used for *cross-complexity pruning*.
+
+**** Gini Index
+
+$$
+\sum_{k \neq k'} \hat p_{mk} \hat p_{mk}' = \sum_{k = 1}^{K} \hat p_{mk} (1 - \hat p_{mk})
+$$
+
+Differentiable
+
+**** Cross Entropy/Deviance
+
+$$
+-\sum_{k = 1}^{K} \hat p_{mk} \ log (\hat p_{mk})
+$$
+
+where $\hat p_{mk} = \frac{1}{N_m} \sum_{xx_i \in R_m} I(y_i = k)$. The proportion of class k in node m.
+
+Differentiable
+** Misc
+
+*Unordered Categorical Predictors*: Ordered by proportion in node m and pruned. This favors predictors with high cardinality which can overfit models.
+
 * Boosting
 
 Additive Boosting is a technique that weights observations according to how accurate they are. 
@@ -331,6 +368,29 @@ where $\Theta = \{ T_j, \gamma_j \}_1^J$
 
 Minimizer for $\Theta$: $\hat \Theta =  \underset{\Theta}{arg \ min} \sum_{j = 1}^{J} L(y_i, \gamma_j)$
 
+*Model*
+
+$$
+f_M (x) = \sum_{m = 1}^{M} T(X; \Theta_m)
+$$
+
+where $f_M$ is a sum of trees.
+
+For each tree, solve
+$$
+\hat \Theta_m = \underset{\Theta_m}{arg \ min} \sum_{i = 1}^{N} L(y_i, f_{m - 1} (x_i)) + T(x_i; \Theta_m)
+$$ for region $\Theta_m$ and constants
+
+$$
+\hat \gamma_{jm} = \underset{\gamma_{jm}}{arg \ min} \sum_{x_i \in R_{jm}} L(y_i, f_{m - 1} (x) + \gamma_{jm})
+$$.
+
+Used Squared-Error Loss for regression. Fairly simple since it's a single tree as in the Tree Section.
+
+For 2-class classification, use exponential loss in AdaBoost.
+
+Using absolute Error or Huber loss functions more robust than Squared Error for regression. Deviance more robust than exponential for classification but the algorithms are not fast.
+
 **** Steps
 
 1. Find $R_j$
@@ -345,6 +405,115 @@ Minimizer for $\Theta$: $\hat \Theta =  \underset{\Theta}{arg \ min} \sum_{j = 1
 2. Find $\gamma_j$ given $R_j$
    Typically $\hat \gamma_j = \bar y_j$ unless approximate above is used.
 
+*** Numerical Optimization
+
+As long as a loss function is differentiable, it can be minimized.
+
+Let
+
+$$
+L(f) = \sum_{i = 1}^{N} L(y_i, f(x_i))
+$$
+
+where $f(x)$ is a sum of trees.
+
+$$
+\hat f = \underset{f}{arg \ min} \ L(f)
+$$
+
+where $f = \{ f(x_i), ..., f(x_N)\}^T$
+
+Essentially, $\hat f$ is solved for by adding component vectors based on an increment $h_m$.
+
+$$
+f_M = \sum_{m = 0}^{M} h_m, \ h_m \in \mathbb R^N, \ f \in \mathbb R^N
+$$
+
+**** Steepest Descent
+
+\begin{equation}
+\begin{split}
+h_m = & - \rho_m g_m\\
+\rho_m = & \underset{\rho}{arg \ min} L(f_{m - 1} - \rho g_m) \ \text{scalar}\\
+g_{im} = & \left [ \frac{\partial L(y_i, f(x_i))}{\partial f(x_i)} \right ]_{f(x_i) = f_{m - 1} (x_i)} \ \text{gradient of $L(f)$ is evaluated at $f = f_{m - 1}$}\\
+g_m \in & \mathbb R^N
+\end{split}
+\end{equation}
+
+Then $f_m = f_{m - 1} - \rho_m g_m$ is updated.
+
+This is considered very greedy. $L(f)$ is *unconstrained* in the direction of maximal descent.
+
+** Gradient Boosting
+
+Tree predictions ($T(x; \Theta_m)$) are analogous to components of negative gradient. The key difference from *Steepest Ascent* is the tree components are not independent. $t_m = \{ T(x_1; \Theta_m), ..., T(x_N; \Theta_m)\}^T$ are constrained to be predictions of a $J_m$-terminal node decision tree.
+
+Since the model will be used to fit data other than the training data, the negative gradient cannot be used outright; however, $t_m$ can be fit using Least Squres.
+
+$$
+\tilde \Theta_m = \underset{\Theta}{arg \ min} \sum_{i = 1}^{N} (-g_{im} - T(x_i ; \Theta))^2
+$$
+
+e.g. Fit a tree T to negative gradient values using Least Squares.
+
+*** Loss Functions
+
+| Name                | Setting        | Loss Fn                      | Gradient                                                                                                                                                                                                         |
+|---------------------+----------------+------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Squared-Error Loss  | Regression     | $\frac{1}{2} [y_i - f(x)]^2$ | $y_i - f(x_i)$                                                                                                                                                                                                   |
+| Absolute-Error Loss | Regression     | $abs(y_i-f(x_i))$            | $sign(y - f(x_i))$                                                                                                                                                                                               |
+| Huber               | Regression     | Huber                        | $\begin{cases} y_i - f(x_i), & abs(y_i - f(x_i)) \leq \delta_m\\ \delta_m \cdot sign(y_i - f(x_i)), & abs(y_i - f(x_i)) > \delta_m\\ \delta_m = \alpha th \ \text{quantile} \ \{abs(y_i - f(x_i))\} \end{cases}$ |
+| Deviance            | Classification | Dviance                      | kth component: $I(y_i = G_k) - \rho_k (x_i)$ where $\rho_l (x_i) = \frac{exp(f_k (X))}{\sum_{1}^{K} exp(f_K (X))}$                                                                                               |
+
+
+*** Parameters
+
+**** J
+The number of max nodes for a tree to grow. e.g. J = 2 is called a stump since its a tree with 2 terminal nodes.
+
+In general, $4 \leq J \leq 8$ is found to be the ideal range but there's seldom improvement over $J \simeq 6$.
+
+This tends to reflect degrees of interaction but not always. For example, J = 2 means no interaction terms, J = 3 means 1st order interactions, etc.
+**** M
+
+Number of iterations to run the boosting algorithm through.
+
+**** Learning Rate
+
+Penalizing a gradient with a shrinkage parameter can bring down test deviance and misclassification error, at the expense of higher M (or iterations)
+
+$$
+f_m (x) = f_{m - 1} (x) + \nu \sum_{j = 1}^{J} I (x \in R_{jm})
+$$
+
+$0 < \nu < 1$
+
+*** Algorithm
+
+1. Initialize $f_0 (x) = \underset{\gamma}{arg \ min} \sum_{1}^{N} L(y_i, \gamma)$
+   This is called the optimal constant (or a single-node tree)
+2. For m = 1 to N. For classification, this step is repeated K times.
+   a. $i = [1, N]$. Compute
+      $$
+      r_{im} = - \left [ \frac{\partial L(y_i, f(x_i))}{\partial f(x_i)} \right ]_{f = f_{m - 1}}
+      $$
+
+      These are called pseudo/generalized residuals.
+   b. Fit regression tree to targets $r_{im}$ giving terminal regions $R_{jm}, \ j = [1, J_m]$
+   c. For $J = [1, J_m]$, Compute
+
+      $$
+      \gamma_{jm} = \underset{\gamma}{arg \ min} \sum_{x_i \in R_{jm}} L(y_i, f_{m - 1} (x_i) + \gamma)
+      $$
+   d. Update $f_m (x) = f_{m - 1} (x) + \sum_{m = 1}^{J_m} \gamma_{jm} I(x \in R_{jm})$
+
+3. Output $\hat f(x) = f_M (x)$.
+   For classification, K tree expansions are produced.
+
+   
+*** Stochastic Gradient Boosting
+
+Sampling a fraction $\eta$ of the training data to grow the next tree. This is usually $\eta = \frac{1}{2}$ but can be smaller for Large N. This can improve Deviance and Error but must be used with shrinkage, otherwise it makes prediction error worse.
 ** Interpreting Linear Combinations of Trees
 *** Relative Importance
 
