@@ -1,0 +1,165 @@
+* Support Vector Machines
+
+An extension of Linear and Quadratic Discriminant Analysis (LDA and QDA respectively) (See AppliedStats2 in StatisticsMasters) which fit a linear regression line to the hyperplane that best separates one or more known groups of observations. This is known as the "Separating Hyperplane" defined in the "Separating Hyperplane Theorem" (See OptimizationTheory in StatisticsMasters). This works when the underlying data and the classes have a linear relationship. LDA has the assumption that all classes have the same underlying covariance matrix while QDA does not have the same assumption.
+
+SVM's build off this.
+
+** Support Vector Classifiers
+
+*How to classify a new observation given existing clusters of data?*
+
+Threshold: The Separating Hyperplane which dictates which class an observation is associated with.
+Margin: Shortest distance between the threshold and the closest observation for each class K.
+
+
+Maximal Margin Classifier: When the threshold is halfway between the closest observations for each class, the margin is maximized. Sensitive to outliers in training data and can cause misclassifications.
+
+Choosing a threshold that allows misclassifications is an example of the Bias-Variance Tradeoff.
+
+
+Soft Margin: The distance between the observations and the threshold when misclassifications are allowed.
+
+How to determine the best "Soft Margin"? Use CV with different Soft Margins to find the margin that minimizes classification error.
+
+When a Soft Margin is used to determine the location of the threshold, then a "Soft Margin Classifier" is being  used. aka a Support Vector Classifier.
+
+Support Vectors: Observations on the edge and within a Soft Margin.
+
+#+begin_quote
+All flat affine subspaces are called hyperplanes
+#+end_quote
+
+Can handle outliers and overlapping classifications. Does well with data clean separated into distinct groups.
+
+e.g.
+
+|--RRRR---RGRG---GGGG--|
+
+Do not perform well with data that is not cleanly separated into distinct, separate groups.
+
+e.g.
+
+|--RRR----GGGGGG----RRR--|
+
+Support Vector Machines can handle this type!
+
+** Support Vector Machines
+
+Handle the case where there are multiple groups of the same data type.
+
+Add a Y-axis with values of given feature squared.
+
+      _
+      .
+      .
+      .
+$X^2$ .
+      .
+      .
+      +..........|
+           $X$
+
+Main ideas
+1. Start with data in a low-dimension
+2. Move data into a higher dimensions
+3. Find a Support Vector Classifier that separates the data into 2 groups.
+
+*** How to decide how to transform the data?
+
+SVM's use Kernel Functions to systematically find Support Vector Classifiers in higher dimensions.
+
+Do not actually calculate the transformations of the data from lower to higher. They only calculate relationships between a pair of points as if they were in higher dimensions. Which is calculating dot products between each points This is known as the *Kernel Trick*.
+
+**** Polynomial Kernel
+
+$$
+\left ( a \times b + r \right )^d
+$$
+
+a, b: 2 different observations 
+d: degree of polynomial
+r: coefficient of the polynomial
+
+*Example*
+r = 1/2
+d = 2
+\begin{equation}
+\begin{split}
+\left ( a \times b + 2 \right )^2 = & \left ( a \times b + \frac{1}{2} \right ) \left ( a \times b + \frac{1}{2} \right )\\
+= & ab + a^2 b^2 + \frac{1}{4}\\
+= & (a, a^2, \frac{1}{2}) \cdot (b, b^2, \frac{1}{2})
+\end{split}
+\end{equation}
+
+Dot product gives high dimensional coordinates for the data. as above, (x, y, z). Note that if Z matches or is a constant, it can be ignored.
+Systematically increases d to find a SVC using Cross Validation.
+
+r and d are determined using CV.
+
+When $r = 0$, the data stays in the same dimension.
+
+**** Radial Kernel
+
+AKA *Radial Basis Function*
+
+$$
+exp \left ( - \gamma (a - b)^2 \right)
+$$
+
+
+Gives us square distance between two observations. Euclidean distance
+a, b: 2 different observations
+$\gamma$: Scales influence of distance on the classification. Determined via CV
+
+
+*Example*
+
+$\gamma = \frac{1}{2}$
+
+
+*Taylor Series Expansion of $e^x$*
+
+Let a = 0.
+
+\begin{equation}
+\begin{split}
+e^x = & 1 + \frac{e^a}{1!} x + \frac{e^a}{2!} x^2 + \frac{e^a}{3!} x^3 + ... + \frac{e^a}{\infty !} x^\infty\\
+    = & 1 + \frac{1}{1!} x + \frac{1}{2!} x^2 + \frac{1}{3!} x^3 + ... + \frac{1}{\infty !} x^\infty
+\end{split}
+\end{equation}
+
+
+*Calculating Taylor Series Expansion of $e^{ab}$*
+
+\begin{equation}
+\begin{split}
+e^{ab} = & 1 + \frac{e^{ab}}{1!} ab + \frac{e^{ab}}{2!} {ab}^2 + \frac{e^{ab}}{3!} {ab}^3 + ... + \frac{e^{ab}}{\infty !} {ab}^\infty\\
+= & (1, 1 \sqrt \frac{1}{1!} a, 1 \sqrt \frac{1}{2!} a^2, ..., 1 \frac{1}{\infty !} a^\infty) \cdot (1, 1 \sqrt \frac{1}{1!} b, 1 \sqrt \frac{1}{2!} b^2, ..., 1 \frac{1}{\infty !} b^\infty)
+\end{split}
+\end{equation}
+
+Each term in this expansion contains a Polynomial Kernel where $r = 0$ and $d \in[0, \infty)$
+
+Let $s = \sqrt{ exp (- \frac{1}{2} (a^2 + b^2))}$
+\begin{equation}
+\begin{split}
+exp \left ( - \frac{1}{2} (a - b)^2 \right ) = & exp \left ( - \frac{1}{2} (a^2 + b^2 - 2ab) \right )\\
+= & exp \left ( - \frac{1}{2} (a^2 + b^2) \right ) exp \left ( a b \right )\\
+= & exp \left ( - \frac{1}{2} (a^2 + b^2) \right ) exp \left ( a b \right )\\
+= & exp \left ( - \frac{1}{2} (a^2 + b^2) \right ) \left [ (1, 1 \sqrt \frac{1}{1!} a, 1 \sqrt \frac{1}{2!} a^2, ..., 1 \frac{1}{\infty !} a^\infty) \cdot (1, 1 \sqrt \frac{1}{1!} b, 1 \sqrt \frac{1}{2!} b^2, ..., 1 \frac{1}{\infty !} b^\infty) \right ]\\
+= & (s, s \sqrt \frac{1}{1!} a, s \sqrt \frac{1}{2!} a^2, ..., s \frac{1}{\infty !} a^\infty) \cdot (s, s \sqrt \frac{1}{1!} b, s \sqrt \frac{1}{2!} b^2, ..., s \frac{1}{\infty !} b^\infty)
+\end{split}
+\end{equation}
+
+
+Thus: 
+$$
+exp \left ( - \frac{1}{2} (a - b)^2 \right) = (s, s \sqrt \frac{1}{1!} a, s \sqrt \frac{1}{2!} a^2, ..., s \frac{1}{\infty !} a^\infty) \cdot (s, s \sqrt \frac{1}{1!} b, s \sqrt \frac{1}{2!} b^2, ..., s \frac{1}{\infty !} b^\infty)
+$$
+
+
+Finds SVCs in infinite dimensions. Behaves like a weighted nearest neighbor model in lower dimensions. e.g. closer observations have higher weights. The output of the radial kernel tells us the relationship between two points.
+
+
+
+

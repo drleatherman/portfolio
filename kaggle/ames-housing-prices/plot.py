@@ -418,6 +418,16 @@ def plot_ridge_path(X, y):
     plt.title("Ridge coefficients as a function of the regularization")
     plt.axis("tight")
     plt.show()
+  
+
+def plot_regression_results2(y_true, y_pred, title, scores, elapsed_time):
+
+    fig = (
+        ggplot(aes(x = y_true, y = y_pred))
+        + geom_point(color = "blue")
+    ).draw()
+    ax = fig.get_axes()
+    return ax[0]
 
 
 def plot_regression_results(ax, y_true, y_pred, title, scores, elapsed_time):

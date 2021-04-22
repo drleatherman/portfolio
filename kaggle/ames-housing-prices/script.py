@@ -10,6 +10,7 @@ from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegresso
 from sklearn.compose import make_column_transformer
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
 import numpy as np  # linear algebra
 import time
@@ -23,7 +24,7 @@ KAGGLE_PROJ_PATH = os.path.join(os.getcwd(), "kaggle", "ames-housing-prices")
 sys.path.append(KAGGLE_PROJ_PATH)
 
 from util import get_logger  # noqa
-from plot import generate_summary_plots, plot_regression_results  # noqa
+from plot import generate_summary_plots, plot_regression_results, plot_regression_results2 # noqa
 
 
 SEED = 12345
@@ -539,7 +540,7 @@ def run_pipelines():
 
     estimators = build_estimators(X, np.nan)
 
-    fig, axs = plt.subplots(2, 2, figsize=(9, 7))
+    fig, axs = plt.subplots(2, 2, figsize=(9, 7), facecolor="white")
     axs = np.ravel(axs)
 
     try:

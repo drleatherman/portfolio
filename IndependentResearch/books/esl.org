@@ -277,7 +277,7 @@ The additive expansion of AdaBoost estimates one-half of the log-odds $P(Y = 1 |
 
 *** Classification
 
-**** Exponentional
+**** Exponential
 
 $$
 L(y_i, f(x)) = exp (-y f(x))
