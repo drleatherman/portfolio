@@ -1,0 +1,57 @@
+#+title:     Ecoli Readings on Chicago Beaches
+#+author:    Dustin
+#+email:     dustin@dustin-All-Series
+
+
+* Introduction
+
+Water samples from Chicago Beaches in Lake Michigan have samples taken every 5 minutes. These are sent for processing to return a measurement of CCE and CFU within the water. 235 CFU is considered the threshold for presence of Ecoli in water for recreational activities. The City of Chicago changes the beach warnings to *yellow* when CFU > 235. This threshold can be found in section 5.1 of the EPA Recreational Water Quality Report. At this threshold, the estimated illness rate is 0.036 for a given water recreationalist. The BAV criterion are considered conservative and are merely a tool to help direct Beach Actions with regards to water quality.
+
+The Statistical Threshold Value (STV) is a metric used to pick the upper limit in a Confidence Interval for a given set of values. The formula used for calculating STV values for CFU can be found [here](https://producesafetyalliance.cornell.edu/sites/producesafetyalliance.cornell.edu/files/shared/documents/2017%20GM%20STV%20Worksheet%20v1.0.pdf)
+
+* Datasets
+- [Ecoli Predictions](https://data.cityofchicago.org/Parks-Recreation/Beach-E-coli-Predictions/xvsz-3xcj)
+- [Beach Lab Data](https://data.cityofchicago.org/Parks-Recreation/Beach-Lab-Data/2ivx-z93u)
+- [Beach Weather Station Sensor Data](https://data.cityofchicago.org/Parks-Recreation/Beach-Weather-Stations-Automated-Sensors/k7hf-8y75)
+- [Beach Water Quality Sensor Data](https://data.cityofchicago.org/Parks-Recreation/Beach-Water-Quality-Automated-Sensors/qmqz-2xku)
+- [Beach Swim Advisories](https://data.cityofchicago.org/Parks-Recreation/Beach-Swim-Advisories/t62e-8nvc)
+* Things I want to know
+
+1. Do the culture-based methodology and rapid-testing produce similar predictive results?
+2. Is there a dataset to cross-reference these levels with reported ecoli diagnosis?
+   Not for Ecoli, at least on City of Chicago's website.
+3. The information about the Beach Lab Data dataset indicates that the final predictive model also leverages weather information from other datasets. What is the relationship between Ecoli presence and Weather? What water quality factors can be associated with increased presence of Ecoli?
+4. Is there a dataset of predicted values that can be used to cross-reference the measurements and see how close they are?
+   Yes, though it's only available for some days. https://data.cityofchicago.org/Parks-Recreation/Beach-E-coli-Predictions/xvsz-3xcj
+5. Do the existing tests capture the O157:H7 serotype? (which doesn't have $\beta$-glucuronidase activity)
+6. Do existing testing methodologies capture non-FIB E. Coli?
+
+   qPCR does detect Ecoli 0157:H7 by focusing on the Stx1 and Stx2 genes instead of $\beta$-glucurondidase.
+7. How are the effects of the limitations of qPCR testing mitigated?
+8. Is there a dataset associated with Ecoli cases in Chicago?
+9. Is there a dataset associated with beach attendance in Chicago?
+   Not that I can find.
+10. Can I use the information provided to also show an estimated number of people that could fall ill based on the CFU or CCE levels?
+
+    Yes. The formulas for such are on p35 on the EPA Recreational Water Quality Report.
+   
+11. There is only water and weather sensor data for a small number of beaches compared to the number of beaches that ecoli levels were collected from. Is there a source where I can get weather and water data for the missing locations and days?
+12. The Beach Swim Advisory dataset makes predictions for beaches that contain entries for either Water or Weather data. What parameters is the model using? It is too much missing data to impute. 
+
+    The Beach Swim Advisories dataset only has values for Summer 2016. There are still not matching data values in some of the beaches for this time period.
+* Goal
+- Create a better model than the one currently used for Ecoli predictions
+- Visualize the Estimated Illness rate based off the measurements as well.
+- Submit this to the Dataset Owner and see if I can get more invo
+
+* Sources
+1. [Environmental Escherichia coli: ecology and public health implications - a review](https://sfamjournals.onlinelibrary.wiley.com/doi/10.1111/jam.13468)
+
+   Discusses various strains of E. coli and their ability to thrive in intra and extra-intestinal environments. 
+2. [Quantitative real-time PCR approaches for microbial community studies in wastewater treatment systems: applications and considerations](https://pubmed.ncbi.nlm.nih.gov/23747590/)
+
+   Describes and discusses effectiveness of qPCR testing. This is a newer method that the City of Chicago employs to detect E. coli presence in Lake Michigan.   Discusses qPCR testing process, applications, and limitations. Section 3.9 discusses E Coli detection.
+
+3. [EPA Recreational Water Quality Report](https://www.epa.gov/sites/production/files/2015-10/documents/rwqc2012.pdf)
+
+   Studies and Guidelines done by the EPA with regards to Ecoli in Recreational Waterways.

@@ -163,3 +163,64 @@ Finds SVCs in infinite dimensions. Behaves like a weighted nearest neighbor mode
 
 
 
+* Naive Bayes
+
+By using Bayes Theorem, one can calculate the probability of an event being classified into a group.
+
+** Multinomial Naive Bayes Classifier
+
+A classic example is classifying whether an email or a corpus is spam.
+
+
+Let's say we have the following words, frequencies, and their classifications
+
+| word   | frequency | is_spam |
+|--------+-----------+---------|
+| Dear   |         8 |       0 |
+| Friend |         5 |       0 |
+| Lunch  |         3 |       0 |
+| Money  |         1 |       0 |
+| Dear   |         3 |       1 |
+| Friend |         2 |       1 |
+| Lunch  |         0 |       1 |
+| Money  |         4 |       1 |
+
+\begin{equation}
+\begin{split}
+P(Dear | N) = & 8 / 17\\
+P(Friend | N) = & 5 / 17\\
+P(Lunch | N) = & 3 / 17\\
+P(Money | N) = & 1 / 17\\
+P(Dear | S) = & 2 / 17\\
+P(Friend | S) = & 1 / 17\\
+P(Lunch | S) = & 0 / 17\\
+P(Money | S) = & 4 / 17\\
+P(N) = & 8 / 8 + 4\\
+P(S) = & 4 / 4 + 8\\
+P(N | Dear Friend) = & P(N) \times P(Dear | N) \times P(Friend | N) = 0.09
+P(S | Dear Friend) = & P(S) \times P(Dear | S) \times P(Friend | S) = 0.01
+\end{split}
+\end{equation}
+
+Since $P(N | Dear Friend) > P(S | Dear Friend)$, then "Dear Friend" is a normal message
+
+Note: $P(N), P(S)$ are priors and $P(word | N or S)$ are known as likelihoods
+
+A constant $\alpha$ must be added to the both the numerator and denominator to ensure that there are no 0's in the numerator. Otherwise, there would always be a misclassification when there are no occurrences of a word.
+
+
+** Gaussian Naive Bayes
+
+*Assumptions*
+- each predictor follows a gaussian distribution
+
+The prior is the probability of each class in the training data.
+A log transform is used to prevent _underflow_, where very small numbers can be misinterpreted as 0.
+
+$log(P(A | X = new \ observation)) = log(P(A) \times P(Feature 1 = x | A) \times P(Feature 2 = z | A) \times P(Feature 3 = t | A))$
+
+$log(P(B | X = new \ observation)) = log(P(B) \times P(Feature 1 = x | B) \times P(Feature 2 = z | B) \times P(Feature 3 = t | B))$
+
+The class is assigned to the higher of the two.
+
+Cross Validation can be used to see important features as not all of them may be needed to make classifications.
