@@ -18,7 +18,7 @@ import logging
 import sys
 import os
 
-KAGGLE_PROJ_PATH = os.path.join(os.getcwd(), "kaggle", "ames-housing-prices")
+KAGGLE_PROJ_PATH = os.path.join(os.getcwd())
 
 # append path so we can import functions from local modules
 sys.path.append(KAGGLE_PROJ_PATH)
