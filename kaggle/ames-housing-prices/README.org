@@ -16,3 +16,11 @@ Given 81 variables, predict the Sale Price for a house in Ames, Iowa.
   5. 1stFlrSF (0.605852)
 - How much missing data is there? What columns are the biggest offenders?
   There are 6 columns with over 10% missing values, 4 of which have over 80% missing values. 
+
+** Installation
+#+begin_src shell
+cd <project_dir>/
+pip install pipenv
+pipenv install .
+python script.py
+#+end_src
