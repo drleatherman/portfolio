@@ -100,6 +100,8 @@ p353.
 
 Shows marginal effect one or two features have on predicted outcomes. Always linear in a linear regression model. Can be used to diagnose potential interaction variables.
 
+This [[https://christophm.github.io/interpretable-ml-book/pdp.html][link]] has a pretty good explanation with a few examples as well.
+
 * Trees
 
 Trees lump observations $y_i$ into m terminal nodes which represent a region, $R_m$. The ideal tree best predicts $\hat y_i$ based on predictors, $X$. Most tree building algorithms are greedy, in that they iterate over all the data. The gist is to determine the *best split points (s)* on predictors j.
@@ -204,9 +206,13 @@ G(x) = sign \left ( \sum_{m = 1}^{M} \alpha_m G_m (x) \right )
 $$
 
 G: classifier. $G(x) \in \{ -1, 1\}$
+
 x: predictor matrix
+
 M: Iterations of modified datasets
+
 $\alpha_m$: mth weight
+
 $G_m (x)$: mth classifier
 
 Boosting is a way of fitting an additive expansion using a set of elementary /basis/ functions.
@@ -216,7 +222,9 @@ Boosting is a way of fitting an additive expansion using a set of elementary /ba
 $f(x) = \sum_{m = 1}^{M} \beta_m b(x; \gamma_m)$
 
 $\beta_m$: expansion coefficients
+
 x: predictors
+
 $b(x; \gamma_m)$: Simple function taking a matrix X and an m-number of $\gamma$ parameters.
 
 $\gamma_m$ varies by function.
@@ -463,7 +471,7 @@ e.g. Fit a tree T to negative gradient values using Least Squares.
 | Squared-Error Loss  | Regression     | $\frac{1}{2} [y_i - f(x)]^2$ | $y_i - f(x_i)$                                                                                                                                                                                                   |
 | Absolute-Error Loss | Regression     | $abs(y_i-f(x_i))$            | $sign(y - f(x_i))$                                                                                                                                                                                               |
 | Huber               | Regression     | Huber                        | $\begin{cases} y_i - f(x_i), & abs(y_i - f(x_i)) \leq \delta_m\\ \delta_m \cdot sign(y_i - f(x_i)), & abs(y_i - f(x_i)) > \delta_m\\ \delta_m = \alpha th \ \text{quantile} \ \{abs(y_i - f(x_i))\} \end{cases}$ |
-| Deviance            | Classification | Dviance                      | kth component: $I(y_i = G_k) - \rho_k (x_i)$ where $\rho_l (x_i) = \frac{exp(f_k (X))}{\sum_{1}^{K} exp(f_K (X))}$                                                                                               |
+| Deviance            | Classification | Deviance                     | kth component: $I(y_i = G_k) - \rho_k (x_i)$ where $\rho_l (x_i) = \frac{exp(f_k (X))}{\sum_{1}^{K} exp(f_K (X))}$                                                                                               |
 
 
 *** Parameters

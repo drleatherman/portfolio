@@ -107,3 +107,11 @@ Influence of ith case on the regression coefficients
 - $R^2$ via cross validation
 - Mean Absolute Error
 - Mean Deviance
+
+* How does one know whether an interaction is necessary in a model?
+- Domain knowledge
+- [[org:~/projects/portfolio/IndependentResearch/books/esl.org::*Partial Dependence Plots][Partial Dependence plots]]
+
+* When using Gradient Boosting methods, how do you choose a loss function?
+- Classification or Regression
+- Try different loss functions and compare Mean Absolute Errors or Mean Squared Error to see which performs best.
