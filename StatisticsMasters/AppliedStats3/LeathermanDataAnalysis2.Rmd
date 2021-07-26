@@ -13,17 +13,16 @@ bibliography: LeathermanDataAnalysis2.bib
 knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = FALSE, fig.width = 10)
 
 library(MASS)
+library(pscl)
+library(tidyverse)
 library(proj4)
 library(leaflet)
-library(ggplot2)
 library(grid)
 library(gridExtra)
-library(tidyverse)
 library(reshape2)
 library(knitr)
 library(kableExtra)
 library(GGally)
-library(pscl)
 
 
 dind <- function (glm.full, glm.reduced) {
@@ -92,7 +91,7 @@ leaflet(data = climate, options = leafletOptions(zoomControl = FALSE)) %>%
 climateCalcs <- 
   climate %>% 
     select_if(is.numeric) %>% 
-    select(-Easting, -Northing, -Elevation, -Slope, -Year) %>%
+    dplyr::select(-Easting, -Northing, -Elevation, -Slope, -Year) %>%
     summarize_all(
       funs(
         Min=min, 
@@ -108,7 +107,7 @@ climateCalcs <-
     separate(stat, into = c("Variable", "stat"), sep = "_") %>%
     spread(stat, val) %>%
     column_to_rownames("Variable") %>%
-    select(Min, Q25, Median, Q75, Max, Mean, Stdev)
+    dplyr::select(Min, Q25, Median, Q75, Max, Mean, Stdev)
 
 climateCalcs %>%
   kable(
@@ -125,7 +124,7 @@ climateCalcs %>%
 # Averages and Extreme
 plot.temps <-
   climate %>% 
-  select(Year, `Average Low` = AvgMinTemp, `Average High` = AvgMaxTemp, `High` = HighestTemp, `Low` = LowestTemp) %>% 
+  dplyr::select(Year, `Average Low` = AvgMinTemp, `Average High` = AvgMaxTemp, `High` = HighestTemp, `Low` = LowestTemp) %>% 
   gather(c("Average High", "High", "Low", "Average Low"), key = "Temperature", value = "value") %>%
   mutate(variable = factor(Temperature, level = c("High", "Average High", "Average Low", "Low"))) %>%
   ggplot(aes(x = Year, color = Temperature, y = value)) + 
@@ -138,7 +137,7 @@ plot.temps <-
 
 climate.groups <-
   climate %>% 
-  select(Year, Mine=MineFull, `30 Days` = Rain30, `60 Days` = Rain60, `90 Days` = Rain90, `120 Days` = Rain120, `15 Months` = Rain15mth, `Wet Season Total` = RainWS) %>% 
+  dplyr::select(Year, Mine=MineFull, `30 Days` = Rain30, `60 Days` = Rain60, `90 Days` = Rain90, `120 Days` = Rain120, `15 Months` = Rain15mth, `Wet Season Total` = RainWS) %>% 
   distinct %>% 
   gather(c(-Year,-Mine), key = "variable", value = "value") %>% 
   # reorder factors for presentation purposes
@@ -164,7 +163,7 @@ plot.scatter.rainfall <-
 
 climate.raineven <-
   climate %>% 
-  select(Year, Mine=MineFull, `30 Days` = RainEven30, `60 Days` = RainEven60, `90 Days` = RainEven90, `120 Days` = RainEven120, `15 Months` = RainEven15mth, `Wet Season Total` = RainEvenWS) %>% 
+  dplyr::select(Year, Mine=MineFull, `30 Days` = RainEven30, `60 Days` = RainEven60, `90 Days` = RainEven90, `120 Days` = RainEven120, `15 Months` = RainEven15mth, `Wet Season Total` = RainEvenWS) %>% 
   gather(c(-Year,-Mine), key = "variable", value = "value") %>% 
   # reorder factors for presentation purposes
   mutate(variable = factor(variable, levels = c("30 Days", "60 Days", "90 Days", "120 Days", "15 Months", "Wet Season Total")))
@@ -189,7 +188,7 @@ plot.scatter.raineveness <-
 
 climate.wet.season <-
   climate %>% 
-    select(Rain.Length, Year, Mine=MineFull) %>% 
+    dplyr::select(Rain.Length, Year, Mine=MineFull) %>% 
     group_by(Mine, Year) %>% 
     distinct
 
@@ -222,7 +221,7 @@ diebeck.by.year <-
 
 diebeck.by.year.tot <-
   diebeck %>%
-  select(isDieback, Year, MineFull) %>% 
+  dplyr::select(isDieback, Year, MineFull) %>% 
   group_by(MineFull, Year) %>% 
   summarise_at("Year", funs(cnt=n())) %>% 
   inner_join(diebeck.by.year, by = "MineFull") %>% 
@@ -246,7 +245,7 @@ plot.diebeck <-
       caption = "Dashed lines indicate average"
     )
 
-climate.veg.vars <- climate %>% select(Veg.SR, Year, Mine=MineFull)
+climate.veg.vars <- climate %>% dplyr::select(Veg.SR, Year, Mine=MineFull)
 climate.veg <-
   climate.veg.vars %>% 
     group_by(Mine, Year) %>% 
@@ -301,7 +300,7 @@ The strongest correlation is between Wet Season Length and Rainfall for the Wet 
 
 ```{r corrs, fig.height=8}
 climate %>% 
-  select(Mine=MineFull, AvgMinTemp, AvgMaxTemp, HighestTemp, LowestTemp, RainWS, RainEvenWS, Rain.Length) %>%
+  dplyr::select(Mine=MineFull, AvgMinTemp, AvgMaxTemp, HighestTemp, LowestTemp, RainWS, RainEvenWS, Rain.Length) %>%
   ggpairs(
     mapping = aes(color = Mine), 
     columns = c("AvgMinTemp", "AvgMaxTemp", "HighestTemp", "LowestTemp", "RainWS", "RainEvenWS", "Rain.Length"),

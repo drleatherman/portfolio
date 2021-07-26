@@ -1,0 +1,82 @@
+#+title:     Modern Design of Experiments
+#+author:    Dustin
+
+A book on Design of Experiments written by a renown expert in the subject. This contains my notes as I read through it.
+
+* Chapter 1 - Introduction
+
+*Observational Study*: Conducting analysis on existing data to generate hypothesis or theories on what makes a system work.
+
+*Robust*: A process is robust when it is minimally affected by external sources of variability.
+
+*Factorial Design*: An experiment that tests all possible combinations of factors.
+
+*Fractional Factorial Design*: An experiment that uses a smaller number of possible combinations. Usually done when there are too many combinations to test.
+
+*Empirical Model*: The model of the system that is being experimented on.
+
+*Factor Screening*: Initial Experiment with Small number of factors to understand the System.
+
+** Experimentation Strategies
+
+#+begin_quote
+It is desirable to do sequential experiments rather than a big-bang experiment.
+#+end_quote
+
+*** Best guess
+
+1. Choose a combination of factors
+2. Conduct Experiment
+3. Decide the next set of factors.
+
+Works well when there is a high level of domain knowledge. Can be expensive if experiments aren't cheap to run. Also risk never having the "best" model.
+
+*** One Factor at a Time (OFAT)
+
+1. Select baseline factor
+2. Conduct Experiment for each level
+3. Add factor
+4. Repeat.
+
+It is an inefficient use of data and doesn't account for interactions.
+
+*** Factorial
+
+Factors are varied together. Best design. Best use of data. However, there can be many combinations of factors that make it difficult to pull off.
+
+** Base Principles
+
+*** Factorial Principle
+
+Systematically alter factors in a series of tests.
+
+*** Randomization
+
+Allocation of factor levels and time of execution is random. Helps ensure residuals are random which one of the assumptions for regression.
+
+*** Replication
+
+Multiple runs for a given set of factors. Ensures that we know that an outcome is truly caused by the set of factors we are testing.
+
+*** Blocking
+
+Used to reduce or eliminate variability from nuisance/confounding factors. Usually a set of homogenous variable conditions.
+
+** Misc
+
+*** Type II Error & Power
+
+Failing to reject the null hypothesis when its true. Denoted as $\beta$.
+
+*Power*: Probability of rejecting the null hypothesis when its false. $1 - \beta$.
+
+*** Sample size
+\begin{equation}
+\begin{split}
+n \approx \frac{(Z_{\alpha/2} + Z_{\beta})^2 \sigma^2}{\delta^2}
+\end{split}
+\end{equation}
+
+$\alpha$: Type I Error
+$\beta$: Type II Error
+$\delta$: Population Standard Deviation.

@@ -1,0 +1,109 @@
+#+title:     Interview Cheatsheet
+#+author:    Dustin Leatherman
+
+* What techniques or methods can be used to ensure goodness-of-fit for a fitted Linear Regression model?
+** Assumptions
+*** Normally Distributed Residuals
+Robust to this assumption
+
+**** Verification
+- Shapiro Wilk test
+- QQ Plot
+**** Mitigation
+- More Data
+- Transformation on Response variable (if necessary)
+*** Homoskedasticity in Residuals
+Equal Variance
+
+**** Verification
+- Residual Plots
+- Brown-Forsyth Test
+- Bruesch Pagan test (sensitive to normality departures)
+**** Mitigation
+- [[org:../projects/portfolio/StatisticsMasters/RegressionAnalysis/classnotes.org::*Weighted Least Squares][Weighted Least Squares]]
+- [[org:../projects/portfolio/StatisticsMasters/RegressionAnalysis/classnotes.org::*OLS with Heteroskedasticity][White's Estimator]]
+
+*** Independence between Residuals
+
+This should be known ahead of time.
+
+**** Mitigation
+- Time Series modeling
+
+*** Linear Relationship between Response and Predictors
+
+**** Verification
+- Residual Plots
+- [[org:~/projects/portfolio/StatisticsMasters/RegressionAnalysis/classnotes.org::*Test of Randomness][Durbin-Watson Test]]
+
+  Checks that there is no autocorrelation in residuals
+**** Mitigation
+- re-review model. Maybe a transformation is in order.
+** Multi-collinearity
+*** Variance Inflation Factors ([[org:../projects/portfolio/StatisticsMasters/RegressionAnalysis/classnotes.org::*Variance Inflation Factors][VIF]])
+VIF > 10: Severe
+VIF > 4: mild/moderate
+VIF ~ 1: Ideal
+
+**** Mitigation
+- Center affected predictor variables
+- Use Ridge Regression
+** Variance
+
+*** $R^2$
+
+Amount of variance explained by the model
+
+$$
+1 - \frac{SSE}{SSTo}
+$$
+*** [[org:~/projects/portfolio/StatisticsMasters/RegressionAnalysis/classnotes.org::*Added-variable Plots][Added Variable Plots]] (Partial Regression Plots)
+
+Y-axis: Residual
+X-axis: $X_i | X_j, ...$. e.g. $X_i$ given the other predictors are in the model
+Marginal importance of a given predictor in reducing variability in residuals
+
+** Outliers
+*** Verification
+**** [[org:../projects/portfolio/StatisticsMasters/RegressionAnalysis/classnotes.org::*Session 10 - Outliers & Weighted Least Squares][Studentized Deleted Residuals]]
+
+Identifies outlying Y observations
+
+**** Leverage
+
+- Identifies outlying X observations
+- Checks for observations that are "pulling" the regression line in a particular direction
+
+***** [[org:../projects/portfolio/StatisticsMasters/RegressionAnalysis/classnotes.org::*Influential Cases][DFFITS (Difference of Fits)]]
+
+Influence of the ith case on a single fitted value
+
+***** [[org:~/projects/portfolio/StatisticsMasters/RegressionAnalysis/classnotes.org::*Influential Cases][Cook's Distance]]
+
+Influence of ith case on all fitted values
+
+***** [[org:~/projects/portfolio/StatisticsMasters/RegressionAnalysis/classnotes.org::*Influential Cases][DFBETAS]]
+
+Influence of ith case on the regression coefficients
+
+*** Mitigation
+- Adjust model if outliers are numerous
+- Remove outliers and refit model. Present Both.
+
+* What criteria can be used to compare Linear models?
+- AIC
+- BIC
+- Mallow's $C_p$
+- Log-likelihood
+- ANOVA F-Test between Full and Reduced Model
+- Drop-in-Deviance Test between Full and Reduced Model (GLM's only)
+* How does one validate a Boosted Tree or Random Forest Model?
+** Classification
+- Confusion Matrix
+  + Is recall or precision more important? Or both so use F1?
+- ROC curve
+- AUC metric
+** [[org:~/projects/portfolio/IndependentResearch/books/esl.org::*Validation Statistics][Regression]]
+- $R^2$ via cross validation
+- Mean Absolute Error
+- Mean Deviance
